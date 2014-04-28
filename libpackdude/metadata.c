@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include "metadata.h"
 
-bool metadata_add(metadata_t *metadata, const char *name, const char *value) {
+result_t metadata_add(metadata_t *metadata, const char *name, const char *value) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_MALLOC_FAILED;
 
 	/* metadata fields */
 	metadata_field_t *fields;
@@ -22,15 +22,15 @@ bool metadata_add(metadata_t *metadata, const char *name, const char *value) {
 	++(metadata->count);
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 end:
-	return is_success;
+	return result;
 }
 
-bool metadata_parse(const char *raw, const size_t size, metadata_t *metadata) {
+result_t metadata_parse(const char *raw, const size_t size, metadata_t *metadata) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_MALLOC_FAILED;
 
 	/* the current position within the raw metadata */
 	char *position;
@@ -52,16 +52,20 @@ bool metadata_parse(const char *raw, const size_t size, metadata_t *metadata) {
 	metadata->copy[size - 1] = '\0';
 
 	line = strtok_r(metadata->copy, "\n", &position);
-	if (NULL == line)
+	if (NULL == line) {
+		result = RESULT_NO_LINE_BREAK;
 		goto free_copy;
+	}
 
 	metadata->count = 0;
 	metadata->fields = NULL;
 	do {
 		/* parse the line */
 		value = strchr(line, '=');
-		if (NULL == value)
+		if (NULL == value) {
+			result = RESULT_NO_SEPARATOR;
 			goto free_fields;
+		}
 		value[0] = '\0';
 		++value;
 	
@@ -76,7 +80,8 @@ bool metadata_parse(const char *raw, const size_t size, metadata_t *metadata) {
 		}
 
 		/* add it to the array */
-		if (false == metadata_add(metadata, line, value))
+		result = metadata_add(metadata, line, value);
+		if (RESULT_OK != result)
 			goto free_fields;
 
 		/* continue to the next line */
@@ -84,7 +89,7 @@ bool metadata_parse(const char *raw, const size_t size, metadata_t *metadata) {
 	} while (NULL != line);
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 	goto end;
 
 free_fields:
@@ -96,7 +101,7 @@ free_copy:
 	free(metadata->copy);
 
 end:
-	return is_success;
+	return result;
 }
 
 const char *metadata_get(const metadata_t *metadata, const char *name) {
@@ -121,9 +126,9 @@ void metadata_close(metadata_t *metadata) {
 	free(metadata->copy);
 }
 
-bool metadata_dump(const metadata_t *metadata, const char *path) {
+result_t metadata_dump(const metadata_t *metadata, const char *path) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_FOPEN_FAILED;
 
 	/* the file */
 	FILE *file;
@@ -138,17 +143,19 @@ bool metadata_dump(const metadata_t *metadata, const char *path) {
 
 	/* write all fields to the file */
 	for (i = 0; metadata->count > i; ++i) {
-		if (0 > fprintf(file, "%s=%s\n", metadata->fields[i].name, metadata->fields[i].value))
+		if (0 > fprintf(file, "%s=%s\n", metadata->fields[i].name, metadata->fields[i].value)) {
+			result = RESULT_FOPEN_FAILED;
 			goto close_file;
+		}
 	}
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 close_file:
 	/* close the file */
 	(void) fclose(file);
 
 end:
-	return is_success;
+	return result;
 }

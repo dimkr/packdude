@@ -9,9 +9,9 @@
 #include <stdlib.h>
 #include "package.h"
 
-bool package_open(const char *path, package_t *package) {
+result_t package_open(const char *path, package_t *package) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_FILE_MISSING;
 
 	/* the package attributes */
 	struct stat attributes;
@@ -43,8 +43,10 @@ bool package_open(const char *path, package_t *package) {
 
 	/* map the archive contents to memory */
 	package->contents = mmap(NULL, (size_t) attributes.st_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, package->fd, 0);
-	if (NULL == package->contents)
+	if (NULL == package->contents) {
+		result = RESULT_MMAP_FAILED;
 		goto close_package;
+	}
 
 	/* locate the package header */
 	package->header = (const package_header_t *) package->contents;
@@ -53,43 +55,55 @@ bool package_open(const char *path, package_t *package) {
 	raw_metadata = (const char *) package->contents + sizeof(package_header_t);
 
 	/* make sure the metadata size is at least the size of "a=b", the smallest possible metadata */
-	if ((3 * sizeof(char)) > package->header->metadata_size)
+	if ((3 * sizeof(char)) > package->header->metadata_size) {
+		result = RESULT_INVALID_SIZE;
 		goto unmap_contents;
+	}
 
 	/* locate the archive contained in the package */
  	archive = (unsigned char *) package->header + sizeof(package_header_t) + package->header->metadata_size;
 
 	/* make sure the archive is not empty */
 	archive_size = ((uInt) attributes.st_size) - (archive - package->contents);
-	if (0 == archive_size)
+	if (0 == archive_size) {
+		result = RESULT_INVALID_SIZE;
 		goto unmap_contents;
+	}
 
 	/* parse the package metadata */
-	if (false == metadata_parse(raw_metadata, (size_t) package->header->metadata_size, &package->metadata))
+	result = metadata_parse(raw_metadata, (size_t) package->header->metadata_size, &package->metadata);
+	if (RESULT_OK != result)
 		goto unmap_contents;
 
 	/* get the package architecture */
 	architecture = metadata_get(&package->metadata, "arch");
-	if (NULL == architecture)
+	if (NULL == architecture) {
+		result = RESULT_NO_ARCHITECURE;
 		goto unmap_contents;
+	}
 
 	/* check whether the package is incompatible */
-	if ((0 != strcmp(ARCH, architecture)) && (0 != strcmp("all", architecture)))
+	if ((0 != strcmp(ARCH, architecture)) && (0 != strcmp("all", architecture))) {
+		result = RESULT_INCOMPATIBLE_ARCHITECURE;
 		goto free_metadata;
+	}
 
 	/* verify the package checksum */
-	if (((uInt) package->header->checksum) != crc32(crc32(0L, NULL, 0), archive, archive_size))
+	if (((uInt) package->header->checksum) != crc32(crc32(0L, NULL, 0), archive, archive_size)) {
+		result = RESULT_BAD_CHECKSUM;
 		goto free_metadata;
+	}
 
 	/* open the archive */
-	if (false == archive_open(archive, (size_t) archive_size, &package->archive))
+	result = archive_open(archive, (size_t) archive_size, &package->archive);
+	if (RESULT_OK != result)
 		goto free_metadata;
 
 	/* save the package size */
 	package->size = attributes.st_size;
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 	goto end;
 
 free_metadata:
@@ -105,7 +119,7 @@ close_package:
 	(void) close(package->fd);
 
 end:
-	return is_success;
+	return result;
 }
 
 void package_close(package_t *package) {
@@ -122,9 +136,9 @@ void package_close(package_t *package) {
 	(void) close(package->fd);
 }
 
-bool package_can_install(const package_t *package, const char *destination) {
+result_t package_can_install(const package_t *package, const char *destination) {
 	/* the return value */
-	bool can_install = false;
+	result_t result = RESULT_NO_DEPENDENCIES_FIELD;
 
 	/* the package dependencies */
 	char *dependencies;
@@ -145,20 +159,24 @@ bool package_can_install(const package_t *package, const char *destination) {
 		dependencies = NULL;
 	else {
 		dependencies = strdup(dependencies);
-		if (NULL == dependencies)
+		if (NULL == dependencies) {
+			result = RESULT_STRDUP_FAILED;
 			goto end;
+		}
 		dependency = strtok_r(dependencies, " ", &position);
-		if (NULL == dependency)
+		if (NULL == dependency) {
+			result = RESULT_INVALID_DEPENDENCIES;
 			goto free_dependencies;
+		}
 		do {
-			if (false == package_is_installed(dependency, destination))
+			if (RESULT_NO == package_is_installed(dependency, destination))
 				goto free_dependencies;
 			dependency = strtok_r(NULL, " ", &position);
 		} while (NULL != dependency);
 	}
 
 	/* report the package can be installed */
-	can_install = true;
+	result = RESULT_OK;
 
 free_dependencies:
 	/* free the dependencies list */
@@ -166,14 +184,14 @@ free_dependencies:
 		free(dependencies);
 
 end:
-	return can_install;
+	return result;
 }
 
-bool package_install(package_t *package,
+result_t package_install(package_t *package,
                      const install_reason_t reason,
                      const char *destination) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_NO_NAME_FIELD;
 
 	/* the package name */
 	const char *name;
@@ -187,32 +205,36 @@ bool package_install(package_t *package,
 		goto end;
 
 	/* check whether the package can be installed */
-	if (false == package_can_install(package, destination))
+	result = package_can_install(package, destination);
+	if (RESULT_OK != result)
 		goto end;
 
 	/* add a metadata field which specifies the installation reason */
-	if (false == metadata_add(&package->metadata, "reason", (const char *) reason))
+	result = metadata_add(&package->metadata, "reason", (const char *) reason);
+	if (RESULT_OK != result)
 		goto end;
 
 	/* save a copy of the package metadata */
 	(void) snprintf((char *) &metadata, sizeof(metadata), "%s/%s/%s", destination, PACKAGE_METADATA_DIR, name);
-	if (false == metadata_dump(&package->metadata, (char *) &metadata))
+	result = metadata_dump(&package->metadata, (char *) &metadata);
+	if (RESULT_OK != result)
 		goto end;
 
 	/* extract the archive */
-	if (false == archive_extract(&package->archive, destination))
+	result = archive_extract(&package->archive, destination);
+	if (RESULT_OK != result)
 		goto end;
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 end:
-	return is_success;
+	return result;
 }
 
-bool package_is_installed(const char *name, const char *destination) {
+result_t package_is_installed(const char *name, const char *destination) {
 	/* the return value */
-	bool is_installed = false;
+	result_t is_installed = RESULT_NO;
 
         /* the package metadata path */
         char metadata[PATH_MAX];
@@ -226,7 +248,7 @@ bool package_is_installed(const char *name, const char *destination) {
 		goto end;
 
 	/* report the package is installed */
-	is_installed = true;
+	is_installed = RESULT_YES;
 
 end:
 	return is_installed;

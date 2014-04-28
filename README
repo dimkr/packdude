@@ -23,8 +23,9 @@ packdude depends on:
 Planned Features
 ================
   - Support for a single architecture
-  - Package downloading
+  - Package download
   - Package updates
+  - A createrepo-like tool
 
 Credits and Legal Information
 =============================

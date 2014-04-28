@@ -6,19 +6,20 @@
 #include "package.h"
 #include "manager.h"
 
-bool manager_open(manager_t *manager) {
+result_t manager_open(manager_t *manager) {
 	/* the return value */
-	bool is_success = false;
+	result_t result;
 
 	/* open the package database */
-	if (false == database_open(&manager->database))
+	result = database_open(&manager->database);
+	if (RESULT_OK != result)
 		goto end;
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 end:
-	return is_success;
+	return result;
 }
 
 void manager_close(manager_t *manager) {
@@ -26,9 +27,9 @@ void manager_close(manager_t *manager) {
 	database_close(&manager->database);
 }
 
-bool manager_install_by_name(manager_t *manager, const char *name, const char *destination) {
+result_t manager_install_by_name(manager_t *manager, const char *name, const char *destination) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_ALREADY_INSTALLED;
 	
 	/* the raw package metadata */
 	char *raw_metadata;
@@ -60,21 +61,21 @@ bool manager_install_by_name(manager_t *manager, const char *name, const char *d
 	printf("Checking whether %s is already installed\n", name);
 
 	/* if the package is already installed (i.e a recursive dependency), report success */
-	if (true == package_is_installed(name, destination)) {
-		is_success = true;
+	if (RESULT_YES == package_is_installed(name, destination))
 		goto end;
-	}
 
 	printf("Querying the package database for %s\n", name);
 
 	/* locate the package */
-	if (false == database_query_by_name(&manager->database, name, &raw_metadata, &size))
+	result = database_query_by_name(&manager->database, name, &raw_metadata, &size);
+	if (RESULT_OK != result)
 		goto end;
 
 	printf("Parsing the metadata of %s\n", name);
 
 	/* parse the package metadata */
-	if (false == metadata_parse(raw_metadata, size, &metadata))
+	result = metadata_parse(raw_metadata, size, &metadata);
+	if (RESULT_OK != result)
 		goto free_raw_metadata;
 
 	printf("Getting the dependencies list of %s\n", name);
@@ -96,11 +97,13 @@ bool manager_install_by_name(manager_t *manager, const char *name, const char *d
 
 	/* download the package */
 	(void) snprintf((char *) &download_path, sizeof(download_path), "/tmp/%s", file_name);
-	if (false == database_download_by_file_name(&manager->database, file_name, (const char *) &download_path))
+	result = database_download_by_file_name(&manager->database, file_name, (const char *) &download_path);
+	if (RESULT_OK != result)
 		goto free_metadata;
 
 	/* open the package */
-	if (false == package_open((const char *) &download_path, &package))
+	result = package_open((const char *) &download_path, &package);
+	if (RESULT_OK != result)
 		goto free_dependencies;
 
 	/* TODO: delete in case of failure? */
@@ -111,7 +114,8 @@ bool manager_install_by_name(manager_t *manager, const char *name, const char *d
 	dependency = strtok_r(dependencies, " ", &position);
 	if (NULL != dependency) {
 		do {
-			if (false == manager_install_by_name(manager, dependency, destination))
+			result = manager_install_by_name(manager, dependency, destination);
+			if (RESULT_OK != result)
 				goto close_package;
 			dependency = strtok_r(NULL, " ", &position);
 		} while (NULL != dependency);
@@ -119,12 +123,15 @@ bool manager_install_by_name(manager_t *manager, const char *name, const char *d
 
 	/* TODO: the right installation reason */
 
+	printf("Installing %s\n", name);
+
 	/* install the package */
-	if (false == package_install(&package, INSTALL_REASON_USER, destination))
+	result = package_install(&package, INSTALL_REASON_USER, destination);
+	if (RESULT_OK != result)
 		goto close_package;
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 close_package:
 	/* close the package */
@@ -143,31 +150,33 @@ free_raw_metadata:
 	free(raw_metadata);
 
 end:
-	return is_success;
+	return result;
 }
 
-bool manager_install_by_path(manager_t *manager, const char *path, const char *destination) {
+result_t manager_install_by_path(manager_t *manager, const char *path, const char *destination) {
 	/* the return value */
-	bool is_success = false;
+	result_t result;
 	
 	/* the package */
 	package_t package;
 
 	/* open the package */
-	if (false == package_open(path, &package))
+	result = package_open(path, &package);
+	if (RESULT_OK != result)
 		goto end;
 
 	/* install the package */
-	if (false == package_install(&package, INSTALL_REASON_USER, destination))
+	result = package_install(&package, INSTALL_REASON_USER, destination);
+	if (RESULT_OK != result)
 		goto close_package;
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 close_package:
 	/* close the package */
 	(void) package_close(&package);
 
 end:
-	return is_success;
+	return result;
 }

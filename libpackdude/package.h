@@ -2,7 +2,7 @@
 #	define _PACKAGE_H_INCLUDED
 
 #	include <stdint.h>
-#	include <stdbool.h>
+#	include "error.h"
 #	include "metadata.h"
 #	include "archive.h"
 
@@ -29,11 +29,11 @@ typedef struct {
 	archive_t archive;
 } package_t;
 
-bool package_open(const char *path, package_t *package);
-bool package_can_install(const package_t *package, const char *destination);
-bool package_install(package_t *package, const install_reason_t reason, const char *destination);
+result_t package_open(const char *path, package_t *package);
+result_t package_can_install(const package_t *package, const char *destination);
+result_t package_install(package_t *package, const install_reason_t reason, const char *destination);
 void package_close(package_t *package);
 
-bool package_is_installed(const char *name, const char *destination);
+result_t package_is_installed(const char *name, const char *destination);
 
 #endif

@@ -4,9 +4,9 @@
 #include <archive_entry.h>
 #include "archive.h"
 
-bool _extract_file(struct archive *input, struct archive *output) {
+result_t _extract_file(struct archive *input, struct archive *output) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_READ_BLOCK_FAILED;
 
 	/* a data block */
         const void *block;
@@ -31,21 +31,23 @@ bool _extract_file(struct archive *input, struct archive *output) {
 		}
 	
 		/* extract the data block */
-                if (ARCHIVE_OK != archive_write_data_block(output, block, size, offset))
+                if (ARCHIVE_OK != archive_write_data_block(output, block, size, offset)) {
+			result = RESULT_READ_BLOCK_FAILED;
 			goto end;
+		}
         } while (1);
 
 success:
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 end:
-	return is_success;
+	return result;
 }
 
-bool archive_open(unsigned char *buffer, const size_t size, archive_t *archive) {
+result_t archive_open(unsigned char *buffer, const size_t size, archive_t *archive) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_ARCHIVE_READ_NEW_FAILED;
 
         /* allocate memory for reading the archive */
         archive->archive = archive_read_new();
@@ -54,8 +56,10 @@ bool archive_open(unsigned char *buffer, const size_t size, archive_t *archive) 
 
         /* allocate memory for extraction */
         archive->extractor = archive_write_disk_new();
-        if (NULL == archive->extractor)
+        if (NULL == archive->extractor) {
+		result = RESULT_ARCHIVE_WRITE_DISK_NEW_FAILED;
                 goto close_archive;
+	}
 
         /* set the extrator options */
         archive_write_disk_set_options(archive->extractor, ARCHIVE_EXTRACT_TIME);
@@ -64,11 +68,13 @@ bool archive_open(unsigned char *buffer, const size_t size, archive_t *archive) 
         archive_write_disk_set_standard_lookup(archive->extractor);
 
         /* open the archive */
-        if (0 != archive_read_open_memory(archive->archive, buffer, size))
+        if (0 != archive_read_open_memory(archive->archive, buffer, size)) {
+		result = RESULT_ARCHIVE_READ_OPEN_MEMORY_FAILED;
                 goto close_archive;
+	}
 	
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 	goto end;
 
 close_archive:
@@ -76,7 +82,7 @@ close_archive:
 	archive_close(archive);
 
 end:
-	return is_success;
+	return result;
 }
 
 void archive_close(archive_t *archive) {
@@ -85,9 +91,9 @@ void archive_close(archive_t *archive) {
 }
 
 
-bool archive_extract(archive_t *archive, const char *destination) {
+result_t archive_extract(archive_t *archive, const char *destination) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_GETCWD_FAILED;
 
 	/* the working directory */
 	char working_directory[PATH_MAX];
@@ -100,8 +106,10 @@ bool archive_extract(archive_t *archive, const char *destination) {
 		goto end;
 
 	/* change the working directory to the extraction destination */
-	if (-1 == chdir(destination))
+	if (-1 == chdir(destination)) {
+		result = RESULT_CHDIR_FAILED;
 		goto end;
+	}
 
 	do {
 		/* read the name of one file inside the archive */
@@ -113,24 +121,28 @@ bool archive_extract(archive_t *archive, const char *destination) {
 				break;
 
 			default:
+				result = RESULT_READ_NEXT_HEADER_FAILED;
 				goto restore_working_directory;
 		}
 		
 		/* extract the file */
-		if (ARCHIVE_OK != archive_write_header(archive->extractor, entry))
+		if (ARCHIVE_OK != archive_write_header(archive->extractor, entry)) {
+			result = RESULT_WRITE_HEADER_FAILED;
 			goto restore_working_directory;
-		if (false == _extract_file(archive->archive, archive->extractor))
+		}
+		result = _extract_file(archive->archive, archive->extractor);
+		if (RESULT_OK != result)
 			goto restore_working_directory;
 	} while (1);
 
 success:
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 restore_working_directory:
 	/* restore the original working directory */
 	(void) chdir((const char *) &working_directory);
 
 end:
-	return is_success;
+	return result;
 }

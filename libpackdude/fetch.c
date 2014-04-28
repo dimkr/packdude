@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include "fetch.h"
 
-bool fetcher_open(fetcher_t *fetcher) {
+result_t fetcher_open(fetcher_t *fetcher) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_EASY_INIT_FAILED;
 
 	/* initialize an "easy" libcurl session */
 	fetcher->handle = curl_easy_init();
@@ -12,17 +12,17 @@ bool fetcher_open(fetcher_t *fetcher) {
 		goto end;
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 end:
-	return is_success;
+	return result;
 }
 
-bool fetcher_fetch_to_file(fetcher_t *fetcher,
+result_t fetcher_fetch_to_file(fetcher_t *fetcher,
                            const char *url,
                            FILE *destination) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_EASY_INIT_FAILED;
 
 	/* set the input URL and the output file */
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
@@ -37,14 +37,16 @@ bool fetcher_fetch_to_file(fetcher_t *fetcher,
 		goto end;
 
 	/* fetch the URL */
-	if (CURLE_OK != curl_easy_perform(fetcher->handle))
+	if (CURLE_OK != curl_easy_perform(fetcher->handle)) {
+		result = RESULT_EASY_PERFORM_FAILED;
 		goto end;
+	}
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 end:
-	return is_success;
+	return result;
 }
 
 size_t _append_to_buffer(char *ptr,
@@ -82,11 +84,11 @@ end:
 	return bytes_handled;
 }
 
-bool fetcher_fetch_to_memory(fetcher_t *fetcher,
+result_t fetcher_fetch_to_memory(fetcher_t *fetcher,
                              const char *url,
                              fetcher_buffer_t *buffer) {
 	/* the return value */
-	bool is_success = false;
+	result_t result = RESULT_EASY_SETOPT_FAILED;
 
 	/* set the input URL and the output file */
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
@@ -103,14 +105,16 @@ bool fetcher_fetch_to_memory(fetcher_t *fetcher,
 	/* fetch the URL */
 	buffer->buffer = NULL;
 	buffer->size = 0;
-	if (CURLE_OK != curl_easy_perform(fetcher->handle))
+	if (CURLE_OK != curl_easy_perform(fetcher->handle)) {
+		result = RESULT_EASY_PERFORM_FAILED;
 		goto end;
+	}
 
 	/* report success */
-	is_success = true;
+	result = RESULT_OK;
 
 end:
-	return is_success;
+	return result;
 }
 
 void fetcher_close(fetcher_t *fetcher) {
