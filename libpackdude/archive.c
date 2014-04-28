@@ -1,0 +1,136 @@
+#include <unistd.h>
+#include <limits.h>
+#include <archive.h>
+#include <archive_entry.h>
+#include "archive.h"
+
+bool _extract_file(struct archive *input, struct archive *output) {
+	/* the return value */
+	bool is_success = false;
+
+	/* a data block */
+        const void *block;
+
+	/* the data block size */
+        size_t size;
+
+	/* the data block offset */
+        off_t offset;
+
+	do {
+		/* read a data block */
+                switch (archive_read_data_block(input, &block, &size, &offset)) {
+                	case ARCHIVE_EOF:
+				goto success;
+
+                	case ARCHIVE_OK:
+				break;
+
+			default:
+				goto end;
+		}
+	
+		/* extract the data block */
+                if (ARCHIVE_OK != archive_write_data_block(output, block, size, offset))
+			goto end;
+        } while (1);
+
+success:
+	/* report success */
+	is_success = true;
+
+end:
+	return is_success;
+}
+
+bool archive_open(unsigned char *buffer, const size_t size, archive_t *archive) {
+	/* the return value */
+	bool is_success = false;
+
+        /* allocate memory for reading the archive */
+        archive->archive = archive_read_new();
+        if (NULL == archive->archive)
+                goto end;
+
+        /* allocate memory for extraction */
+        archive->extractor = archive_write_disk_new();
+        if (NULL == archive->extractor)
+                goto close_archive;
+
+        /* set the extrator options */
+        archive_write_disk_set_options(archive->extractor, ARCHIVE_EXTRACT_TIME);
+        archive_read_support_filter_xz(archive->archive);
+        archive_read_support_format_tar(archive->archive);
+        archive_write_disk_set_standard_lookup(archive->extractor);
+
+        /* open the archive */
+        if (0 != archive_read_open_memory(archive->archive, buffer, size))
+                goto close_archive;
+	
+	/* report success */
+	is_success = true;
+	goto end;
+
+close_archive:
+	/* close the archive */
+	archive_close(archive);
+
+end:
+	return is_success;
+}
+
+void archive_close(archive_t *archive) {
+	archive_read_close(archive->archive);
+        archive_read_free(archive->archive);
+}
+
+
+bool archive_extract(archive_t *archive, const char *destination) {
+	/* the return value */
+	bool is_success = false;
+
+	/* the working directory */
+	char working_directory[PATH_MAX];
+
+	/* a file inside the archive */
+	struct archive_entry *entry;
+
+	/* get the working directory path */
+	if (NULL == getcwd((char *) &working_directory, sizeof(working_directory)))
+		goto end;
+
+	/* change the working directory to the extraction destination */
+	if (-1 == chdir(destination))
+		goto end;
+
+	do {
+		/* read the name of one file inside the archive */
+		switch (archive_read_next_header(archive->archive, &entry)) {
+			case ARCHIVE_EOF:
+				goto success;
+
+			case ARCHIVE_OK:
+				break;
+
+			default:
+				goto restore_working_directory;
+		}
+		
+		/* extract the file */
+		if (ARCHIVE_OK != archive_write_header(archive->extractor, entry))
+			goto restore_working_directory;
+		if (false == _extract_file(archive->archive, archive->extractor))
+			goto restore_working_directory;
+	} while (1);
+
+success:
+	/* report success */
+	is_success = true;
+
+restore_working_directory:
+	/* restore the original working directory */
+	(void) chdir((const char *) &working_directory);
+
+end:
+	return is_success;
+}

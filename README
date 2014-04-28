@@ -1,0 +1,33 @@
+                  _       _           _      
+ _ __   __ _  ___| | ____| |_   _  __| | ___ 
+| '_ \ / _` |/ __| |/ / _` | | | |/ _` |/ _ \
+| |_) | (_| | (__|   < (_| | |_| | (_| |  __/
+| .__/ \__,_|\___|_|\_\__,_|\__,_|\__,_|\___|
+|_|                                          
+
+Overview
+========
+
+packdude is a small package manager inspired by Pacman (https://www.archlinux.org/pacman/) and PPM (http://bkhome.org/woof/ppm.htm).
+
+It's under heavy development, in its early stages.
+
+Dependencies
+============
+
+packdude depends on:
+  - libarchive (http://libarchive.org/) with LZMA2 (http://tukaani.org/xz/) support
+  - zlib (http://zlib.net/)
+
+Planned Features
+================
+  - Support for a single architecture
+  - Package downloading
+  - Package updates
+
+Credits and Legal Information
+=============================
+
+packdude is licensed under a 2-clause BSD license, see COPYING for the license text. For a list of its authors and contributors, see AUTHORS.
+
+The ASCII art logo at the top was made using FIGlet (http://www.figlet.org/).
