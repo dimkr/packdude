@@ -1,7 +1,7 @@
 include ../Makefile.inc
 
-LIBS = $(shell $(PKG_CONFIG) --libs zlib libarchive) -lpackdude
-CFLAGS += $(shell $(PKG_CONFIG) --cflags zlib libarchive) -I../libpackdude
+LIBS = $(shell $(PKG_CONFIG) --libs zlib libarchive libcurl) -lpackdude
+CFLAGS += $(shell $(PKG_CONFIG) --cflags zlib libarchive libcurl) -I../libpackdude
 LDFLAGS += -L../libpackdude
 
 all: packdude

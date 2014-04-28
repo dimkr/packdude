@@ -28,7 +28,7 @@ end:
 	return is_success;
 }
 
-bool metadata_parse(const char *raw, const uint16_t size, metadata_t *metadata) {
+bool metadata_parse(const char *raw, const size_t size, metadata_t *metadata) {
 	/* the return value */
 	bool is_success = false;
 

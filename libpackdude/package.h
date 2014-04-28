@@ -6,7 +6,7 @@
 #	include "metadata.h"
 #	include "archive.h"
 
-#	define PACKAGE_METADATA_DIR "/var/packdude"
+#	define PACKAGE_METADATA_DIR VAR_DIR"/packdude"
 
 typedef char *install_reason_t;
 
@@ -30,7 +30,10 @@ typedef struct {
 } package_t;
 
 bool package_open(const char *path, package_t *package);
+bool package_can_install(const package_t *package, const char *destination);
 bool package_install(package_t *package, const install_reason_t reason, const char *destination);
 void package_close(package_t *package);
+
+bool package_is_installed(const char *name, const char *destination);
 
 #endif

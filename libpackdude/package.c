@@ -5,6 +5,8 @@
 #include <zlib.h>
 #include <limits.h>
 #include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
 #include "package.h"
 
 bool package_open(const char *path, package_t *package) {
@@ -13,20 +15,23 @@ bool package_open(const char *path, package_t *package) {
 
 	/* the package attributes */
 	struct stat attributes;
-	
+
 	/* the raw package metadata */
 	const char *raw_metadata;
 
 	/* the archive contained inside the package */
 	unsigned char *archive;
-	
+
 	/* the archive size */
 	uInt archive_size;
+
+	/* the package architecture */
+	const char *architecture;
 
 	/* get the package size */
 	if (-1 == stat(path, &attributes))
 		goto end;
-	
+
 	/* make sure the package size is at least the size of the header, 1 byte of metadata and a 1-byte archive */
 	if ((sizeof(package_header_t) + 2) > attributes.st_size)
 		goto end;
@@ -59,13 +64,22 @@ bool package_open(const char *path, package_t *package) {
 	if (0 == archive_size)
 		goto unmap_contents;
 
-	/* verify the package checksum */
-	if (((uInt) package->header->checksum) != crc32(crc32(0L, NULL, 0), archive, archive_size))
+	/* parse the package metadata */
+	if (false == metadata_parse(raw_metadata, (size_t) package->header->metadata_size, &package->metadata))
 		goto unmap_contents;
 
-        /* parse the package metadata */
-        if (false == metadata_parse(raw_metadata, package->header->metadata_size, &package->metadata))
-                goto unmap_contents;
+	/* get the package architecture */
+	architecture = metadata_get(&package->metadata, "arch");
+	if (NULL == architecture)
+		goto unmap_contents;
+
+	/* check whether the package is incompatible */
+	if ((0 != strcmp(ARCH, architecture)) && (0 != strcmp("all", architecture)))
+		goto free_metadata;
+
+	/* verify the package checksum */
+	if (((uInt) package->header->checksum) != crc32(crc32(0L, NULL, 0), archive, archive_size))
+		goto free_metadata;
 
 	/* open the archive */
 	if (false == archive_open(archive, (size_t) archive_size, &package->archive))
@@ -88,7 +102,7 @@ unmap_contents:
 
 close_package:
 	/* close the package */
-	(void) close(package->fd);	
+	(void) close(package->fd);
 
 end:
 	return is_success;
@@ -97,7 +111,7 @@ end:
 void package_close(package_t *package) {
 	/* close the archive */
 	archive_close(&package->archive);
-	
+
 	/* free the package metadata */
 	metadata_close(&package->metadata);
 
@@ -108,7 +122,56 @@ void package_close(package_t *package) {
 	(void) close(package->fd);
 }
 
-bool package_install(package_t *package, const install_reason_t reason, const char *destination) {
+bool package_can_install(const package_t *package, const char *destination) {
+	/* the return value */
+	bool can_install = false;
+
+	/* the package dependencies */
+	char *dependencies;
+
+	/* a single dependency */
+	char *dependency;
+
+	/* strtok_r()'s position within the dependencies list */
+	char *position;
+
+	/* get the package's dependencies list */
+	dependencies = (char *) metadata_get(&package->metadata, "deps");
+	if (NULL == dependencies)
+		goto end;
+
+	/* make sure all dependencies are installed */
+	if (0 == strlen(dependencies))
+		dependencies = NULL;
+	else {
+		dependencies = strdup(dependencies);
+		if (NULL == dependencies)
+			goto end;
+		dependency = strtok_r(dependencies, " ", &position);
+		if (NULL == dependency)
+			goto free_dependencies;
+		do {
+			if (false == package_is_installed(dependency, destination))
+				goto free_dependencies;
+			dependency = strtok_r(NULL, " ", &position);
+		} while (NULL != dependency);
+	}
+
+	/* report the package can be installed */
+	can_install = true;
+
+free_dependencies:
+	/* free the dependencies list */
+	if (NULL != dependencies)
+		free(dependencies);
+
+end:
+	return can_install;
+}
+
+bool package_install(package_t *package,
+                     const install_reason_t reason,
+                     const char *destination) {
 	/* the return value */
 	bool is_success = false;
 
@@ -121,6 +184,10 @@ bool package_install(package_t *package, const install_reason_t reason, const ch
 	/* get the package name */
 	name = metadata_get(&package->metadata, "name");
 	if (NULL == name)
+		goto end;
+
+	/* check whether the package can be installed */
+	if (false == package_can_install(package, destination))
 		goto end;
 
 	/* add a metadata field which specifies the installation reason */
@@ -141,4 +208,26 @@ bool package_install(package_t *package, const install_reason_t reason, const ch
 
 end:
 	return is_success;
+}
+
+bool package_is_installed(const char *name, const char *destination) {
+	/* the return value */
+	bool is_installed = false;
+
+        /* the package metadata path */
+        char metadata[PATH_MAX];
+
+	/* the metadata attributes */
+	struct stat attributes;
+
+	/* check whether the package metadata exists */
+	(void) snprintf((char *) &metadata, sizeof(metadata), "%s/%s/%s", destination, PACKAGE_METADATA_DIR, name);
+	if (-1 == stat((const char *) &metadata, &attributes))
+		goto end;
+
+	/* report the package is installed */
+	is_installed = true;
+
+end:
+	return is_installed;
 }

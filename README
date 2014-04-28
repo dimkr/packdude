@@ -18,6 +18,7 @@ Dependencies
 packdude depends on:
   - libarchive (http://libarchive.org/) with LZMA2 (http://tukaani.org/xz/) support
   - zlib (http://zlib.net/)
+  - libcurl (http://curl.haxx.se/)
 
 Planned Features
 ================
