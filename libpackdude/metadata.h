@@ -16,6 +16,7 @@ typedef struct {
 } metadata_t;
 
 result_t metadata_parse(const char *raw, const size_t size, metadata_t *metadata);
+result_t metadata_parse_file(const char *path, metadata_t *metadata);
 result_t metadata_add(metadata_t *metadata, const char *name, const char *value);
 const char *metadata_get(const metadata_t *metadata, const char *name);
 void metadata_close(metadata_t *metadata);

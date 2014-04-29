@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "fetch.h"
+#include "log.h"
 
 result_t fetcher_open(fetcher_t *fetcher) {
 	/* the return value */
@@ -18,16 +19,29 @@ end:
 	return result;
 }
 
+size_t _append_to_file(char *ptr,
+                        size_t size,
+                        size_t nmemb,
+                        FILE *file) {
+	/* write a progress indicator */
+	log_write(".");
+
+	return fwrite(ptr, size, nmemb, file);
+}
+
 result_t fetcher_fetch_to_file(fetcher_t *fetcher,
                            const char *url,
                            FILE *destination) {
 	/* the return value */
 	result_t result = RESULT_EASY_INIT_FAILED;
 
+	/* the return value of curl_easy_perform() */
+	CURLcode code;
+
 	/* set the input URL and the output file */
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
 	                                 CURLOPT_WRITEFUNCTION,
-	                                 fwrite))
+	                                 _append_to_file))
 		goto end;
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle, CURLOPT_URL, url))
 		goto end;
@@ -37,7 +51,9 @@ result_t fetcher_fetch_to_file(fetcher_t *fetcher,
 		goto end;
 
 	/* fetch the URL */
-	if (CURLE_OK != curl_easy_perform(fetcher->handle)) {
+	code = curl_easy_perform(fetcher->handle);
+	log_write("\n");
+	if (CURLE_OK != code) {
 		result = RESULT_EASY_PERFORM_FAILED;
 		goto end;
 	}

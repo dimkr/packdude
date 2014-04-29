@@ -3,6 +3,7 @@
 #include <archive.h>
 #include <archive_entry.h>
 #include "archive.h"
+#include "log.h"
 
 result_t _extract_file(struct archive *input, struct archive *output) {
 	/* the return value */
@@ -90,8 +91,7 @@ void archive_close(archive_t *archive) {
         archive_read_free(archive->archive);
 }
 
-
-result_t archive_extract(archive_t *archive, const char *destination) {
+result_t archive_extract(archive_t *archive, file_list_t *file_list, const char *destination) {
 	/* the return value */
 	result_t result = RESULT_GETCWD_FAILED;
 
@@ -100,6 +100,9 @@ result_t archive_extract(archive_t *archive, const char *destination) {
 
 	/* a file inside the archive */
 	struct archive_entry *entry;
+
+	/* the file path */
+	const char *path;
 
 	/* get the working directory path */
 	if (NULL == getcwd((char *) &working_directory, sizeof(working_directory)))
@@ -122,27 +125,46 @@ result_t archive_extract(archive_t *archive, const char *destination) {
 
 			default:
 				result = RESULT_READ_NEXT_HEADER_FAILED;
-				goto restore_working_directory;
+				goto write_line_break;
 		}
+
+		/* get the file path */
+		path = archive_entry_pathname(entry);
+		if (NULL == path) {
+			result = RESULT_ARCHIVE_ENTRY_PATHNAME_FAILED;
+			goto write_line_break;
+		}
+
+		/* add the file to the file list */
+		result = file_list_add(file_list, path);
+		if (RESULT_OK != result)
+			goto write_line_break;
 		
 		/* extract the file */
 		if (ARCHIVE_OK != archive_write_header(archive->extractor, entry)) {
 			result = RESULT_WRITE_HEADER_FAILED;
-			goto restore_working_directory;
+			goto write_line_break;
 		}
 		result = _extract_file(archive->archive, archive->extractor);
 		if (RESULT_OK != result)
-			goto restore_working_directory;
+			goto write_line_break;
+
+		/* output a progress indicator */
+		log_write(".");
 	} while (1);
+
 
 success:
 	/* report success */
 	result = RESULT_OK;
 
-restore_working_directory:
+write_line_break:
+	/* output a line break */
+	log_write("\n");
+
 	/* restore the original working directory */
 	(void) chdir((const char *) &working_directory);
-
 end:
+	
 	return result;
 }

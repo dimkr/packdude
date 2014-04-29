@@ -1,6 +1,11 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <unistd.h>
 #include "metadata.h"
 
 result_t metadata_add(metadata_t *metadata, const char *name, const char *value) {
@@ -155,6 +160,51 @@ result_t metadata_dump(const metadata_t *metadata, const char *path) {
 close_file:
 	/* close the file */
 	(void) fclose(file);
+
+end:
+	return result;
+}
+
+result_t metadata_parse_file(const char *path, metadata_t *metadata) {
+	/* the return value */
+	result_t result = RESULT_STAT_FAILED;
+
+	/* the file descriptor */
+	int fd;
+
+	/* the file attributes */
+	struct stat attributes;
+
+	/* the file contents */
+	char *contents;
+
+	/* get the file size */
+	if (-1 == stat(path, &attributes))
+		goto end;
+
+	/* open the file */
+	fd = open(path, O_RDONLY);
+	if (-1 == fd) {
+		result = RESULT_OPEN_FAILED;
+		goto end;
+	}
+
+	/* map the file to memory */
+	contents = mmap(NULL, (size_t) attributes.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	if (NULL == contents) {
+		result = RESULT_MMAP_FAILED;
+		goto close_file;
+	}
+
+	/* parse the file contents */
+	result = metadata_parse(contents, (size_t) attributes.st_size, metadata);
+
+	/* unmap the file contents */
+	(void) munmap(contents, (size_t) attributes.st_size);
+
+close_file:
+	/* close the file */
+	(void) close(fd);
 
 end:
 	return result;
