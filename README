@@ -1,35 +1,100 @@
-                  _       _           _      
- _ __   __ _  ___| | ____| |_   _  __| | ___ 
+                  _       _           _
+ _ __   __ _  ___| | ____| |_   _  __| | ___
 | '_ \ / _` |/ __| |/ / _` | | | |/ _` |/ _ \
 | |_) | (_| | (__|   < (_| | |_| | (_| |  __/
 | .__/ \__,_|\___|_|\_\__,_|\__,_|\__,_|\___|
-|_|                                          
+|_|
 
 Overview
 ========
 
-packdude is a small package manager inspired by Pacman (https://www.archlinux.org/pacman/) and PPM (http://bkhome.org/woof/ppm.htm).
+packdude is a small package manager inspired by:
+  - pacman (https://www.archlinux.org/pacman/)
+  - PPM (http://bkhome.org/woof/ppm.htm).
 
-It's under heavy development, in its early stages.
+It's under development, in its early stages.
 
 Dependencies
 ============
 
 packdude depends on:
-  - libarchive (http://libarchive.org/) with LZMA2 (http://tukaani.org/xz/) support
-  - zlib (http://zlib.net/)
+  - libarchive (http://libarchive.org/)
+  - SQLite (https://sqlite.org/)
   - libcurl (http://curl.haxx.se/)
 
-Planned Features
-================
-  - Support for a single architecture
-  - Package download
-  - Package updates
-  - A createrepo-like tool
+Additinally, packdude contains miniz (https://code.google.com/p/miniz/).
+
+FAQ
+===
+
+  'packdude'? Are you serious?
+  ----------------------------
+
+Yes. It's like pacman (https://www.archlinux.org/pacman/), the best package
+manager around, but very barebones. packdude may lack many features, but it's a
+true friend.
+
+  Why build another package manager?
+  ----------------------------------
+
+Since installation and removal of packages is a complex task, binary package
+managers provide a major performance benefit compared to script-based ones. Most
+small, community-powered distributions use slow, script-based, home-grown
+package management solutions.
+
+packdude was born as an attempt to provide small distributions with a fast and
+extremely solid package manager, that is easy to use and doesn't make it hard to
+contribute packages (something vital for a small distribution). When packdude
+was conceived, none of the existing, binary packagers matched these criteria.
+
+  What makes packdude simple?
+  ---------------------------
+
+  - The metadata of all packages stored in a packdude repository is contained
+    in one file, a database.
+  - packdude's package format is simple - one byte for the version, 4 bytes for
+    a CRC32 hash (https://wikipedia.org/wiki/Cyclic_redundancy_check) and a tar
+    archive (https://wikipedia.org/wiki/Tar_(file_format)) compressed using
+    deflate (https://wikipedia.org/wiki/DEFLATE). Simple, isn't it?
+  - packdude ships with a tool for easy conversion of archives into packages.
+    This makes it easy to integrate packdude into existing package and
+    distribution building systems.
+
+  How come packdude is "lightweight" when it has these dependencies?
+  ------------------------------------------------------------------
+
+packdude's dependencies were chosen very carefully. They are
+permissively-licensed, small, written in C and support static linking: four
+features required to make packdude a good choice for lightweight or embedded
+systems. They're not very heavy, but they do introduce minor overhead.
+
+However, they can be easily replaced, since packdude's code provides just enough
+abstraction to hide the nasty details of database handling, compression, file
+download, etc' from other modules. For example, originally, packdude used zlib
+(http://zlib.net) instead of miniz.
+
+  Why use a database? Real geeks use text files.
+  ----------------------------------------------
+
+That's correct - going the Unix way means text files. However, using text files
+in a package manager is a mess, since each package has both its metadata (i.e
+its list of dependencies) and installation information (i.e who initiated its
+installation and when). It's hard to store this information in files, since this
+slows down pretty much every aspect of package management and makes error
+handling a mess in a programming language without support for exceptions.
+
+Using a database improves performance with big repositories, simplifies the code
+and makes debugging easier, since databases store useful information (for
+example, complete history of executed queries).
+
+Moreover, using an embedded database makes it possible to store the metadata of
+all packages of a repository in a single file that doesn't need to be parsed
+(unlike text files).
 
 Credits and Legal Information
 =============================
 
-packdude is licensed under a 2-clause BSD license, see COPYING for the license text. For a list of its authors and contributors, see AUTHORS.
+packdude is licensed under a 2-clause BSD license, see COPYING for the license
+text. For a list of its authors and contributors, see AUTHORS.
 
 The ASCII art logo at the top was made using FIGlet (http://www.figlet.org/).
