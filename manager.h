@@ -6,11 +6,13 @@
 #	include "stack.h"
 #	include "result.h"
 
+#	define DEFAULT_PREFIX "/"
+
 #	define REPOSITORY_URL "ftp://dimakrasner.com/packdude"
 
-#	define PACKAGE_ARCHIVE_DIR VAR_DIR"/packdude/archive"
+#	define PACKAGE_ARCHIVE_DIR "."VAR_DIR"/packdude/archive"
 
-#	define INSTALLATION_DATA_DATABASE_PATH VAR_DIR"/packdude/install.sqlite3"
+#	define INSTALLATION_DATA_DATABASE_PATH "."VAR_DIR"/packdude/install.sqlite3"
 
 #	define INSTALLATION_REASON_USER "user"
 #	define INSTALLATION_REASON_DEPENDENCY "dependency"
@@ -24,7 +26,7 @@ typedef struct {
 
 typedef result_t (*dependency_callback_t)(const char *name, void *arg);
 
-result_t manager_new(manager_t *manager);
+result_t manager_new(manager_t *manager, const char *prefix);
 void manager_free(manager_t *manager);
 
 result_t manager_for_each_dependency(manager_t *manager,

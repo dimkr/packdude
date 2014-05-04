@@ -10,6 +10,8 @@ enum verbosity_levels {
 	LOG_DEBUG   = 3
 };
 
+#	define DEFAULT_VERBOSITY_LEVEL (LOG_INFO)
+
 void log_set_level(const verbosity_level_t level);
 void log_write(const verbosity_level_t level, const char *format, ...);
 

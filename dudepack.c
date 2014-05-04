@@ -4,9 +4,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz.c"
-
+#include "log.h"
+#include "comp.h"
 #include "package.h"
 
 int main(int argc, char *argv[]) {
@@ -28,12 +27,20 @@ int main(int argc, char *argv[]) {
 	/* the archive contents */
 	unsigned char *archive = NULL;
 
+	/* the compressed archive contents */
+	unsigned char *compressed_archive = NULL;
+
+	/* the compressed archive size */
+	size_t compressed_size = 0;
+
 	/* get the archive size */
+	log_write(LOG_DEBUG, "Getting the size of %s\n", argv[1]);
 	if (-1 == stat(argv[1], &attributes)) {
 		goto end;
 	}
 
 	/* open the archive */
+	log_write(LOG_INFO, "Reading %s\n", argv[1]);
 	fd = open(argv[1], O_RDONLY);
 	if (-1 == fd) {
 		goto end;
@@ -53,31 +60,47 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* open the output file */
+	log_write(LOG_INFO, "Creating %s\n", argv[2]);
 	output = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (-1 == output) {
+		goto free_compressed_contents;
+	}
+
+	/* compress the archive */
+	log_write(LOG_INFO, "Compressing %s\n", argv[1]);
+	compressed_archive = comp_compress(archive,
+	                                   (size_t) attributes.st_size,
+	                                   &compressed_size);
+	if (NULL == compressed_archive) {
 		goto free_contents;
 	}
 
 	/* hash the archive */
+	log_write(LOG_INFO, "Calculating the checksum of %s\n", argv[1]);
 	header.checksum = (uint32_t) mz_crc32(MZ_CRC32_INIT,
-	                                      archive,
-	                                      (size_t) attributes.st_size);
+	                                      compressed_archive,
+	                                      compressed_size);
 
 	/* write the package header */
+	log_write(LOG_INFO, "Writing %s\n", argv[2]);
 	header.version = 1;
 	if (sizeof(header) != write(output, &header, sizeof(header))) {
-		goto free_contents;
+		goto free_compressed_contents;
 	}
 
 	/* write the archive */
 	if ((ssize_t) attributes.st_size != write(output,
-	                                          archive,
-	                                          (size_t) attributes.st_size)) {
-		goto free_contents;
+	                                          compressed_archive,
+	                                          compressed_size)) {
+		goto free_compressed_contents;
 	}
 
 	/* report success */
 	exit_code = EXIT_SUCCESS;
+
+free_compressed_contents:
+	/* free the compressed archive contents */
+	free(compressed_archive);
 
 free_contents:
 	/* free the archive contents */

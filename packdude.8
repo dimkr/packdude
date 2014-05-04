@@ -1,0 +1,25 @@
+.TH packdude 8
+.SH NAME
+.B packdude 
+\- a package manager
+.SH SYNOPSIS
+.B packdude 
+[-d] [-p PREFIX] -r|-i PACKAGE
+.SH DESCRIPTION
+Installs or removes a package.
+.TP
+.B -r
+Remove the specified package.
+.TP
+.B -i
+Fetch and install the specified package.
+.TP
+.B -d
+Show extensive debugging information.
+.TP
+.B -p
+Instead of operating on the file system root, operate on a prefix.
+.SH "SEE ALSO"
+.B dudepack(1)
+.SH AUTHOR
+Dima Krasner (dima@dimakrasner.com)

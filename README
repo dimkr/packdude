@@ -14,6 +14,12 @@ packdude is a small package manager inspired by:
 
 It's under development, in its early stages.
 
+Features
+========
+
+  - Package download and installation, with recursive dependencies resolution.
+  - Package removal, with automatic cleanup of unneeded packages.
+
 Dependencies
 ============
 
@@ -50,6 +56,9 @@ was conceived, none of the existing, binary packagers matched these criteria.
   What makes packdude simple?
   ---------------------------
 
+  - packdude doesn't ask any question; it does the right thing and that's it.
+    Once a package is removed, all leftover dependencies are cleaned up
+    automatically, including those of other packages.
   - The metadata of all packages stored in a packdude repository is contained
     in one file, a database.
   - packdude's package format is simple - one byte for the version, 4 bytes for

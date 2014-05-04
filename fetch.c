@@ -26,6 +26,7 @@ end:
 }
 
 size_t _append_to_file(char *ptr, size_t size, size_t nmemb, FILE *file) {
+	log_write(LOG_DEBUG, "Received a chunk of %u bytes\n", (size * nmemb));
 	return fwrite(ptr, size, nmemb, file);
 }
 

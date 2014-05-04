@@ -69,7 +69,6 @@ result_t _get_file(repo_t *repo, const char *file_name, const char *path) {
 	/* fetch the file */
 	result = fetcher_fetch_to_file(&repo->fetcher, (const char *) &url, file);
 	if (RESULT_OK != result) {
-		log_write(LOG_ERROR, "Failed to fetch %s\n", file_name);
 		goto close_file;
 	}
 

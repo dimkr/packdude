@@ -5,7 +5,7 @@
 #include <assert.h>
 #include "log.h"
 
-static verbosity_level_t min_verbosity_level = LOG_INFO;
+static verbosity_level_t g_min_verbosity_level = DEFAULT_VERBOSITY_LEVEL;
 
 static const char *g_verobosity_levels[] = {
 	"ERROR",
@@ -15,7 +15,7 @@ static const char *g_verobosity_levels[] = {
 };
 
 void log_set_level(const verbosity_level_t level) {
-	min_verbosity_level = level;
+	g_min_verbosity_level = level;
 }
 
 void log_write(const verbosity_level_t level, const char *format, ...) {
@@ -38,7 +38,7 @@ void log_write(const verbosity_level_t level, const char *format, ...) {
 	       (LOG_ERROR == level));
 
 	/* if the message has a low verbosity level, ignore it */
-	if (min_verbosity_level < level) {
+	if (g_min_verbosity_level < level) {
 		return;
 	}
 

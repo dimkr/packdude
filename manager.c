@@ -8,34 +8,38 @@
 #include "package.h"
 #include "manager.h"
 
-result_t manager_new(manager_t *manager) {
+result_t manager_new(manager_t *manager, const char *prefix) {
 	/* the return value */
 	result_t result = RESULT_IO_ERROR;
 
 	assert(NULL != manager);
+	assert(NULL != prefix);
 
-	/* change the root directory to /, to ensure packages are extracted to the
-	 * root file system */
-	//if (-1 == chdir("/")) {
-	//	goto end;
-	//}
+	/* change the root directory to the installation prefix */
+	log_write(LOG_DEBUG, "Changing the working directory to %s\n", prefix);
+	if (-1 == chdir(prefix)) {
+		goto end;
+	}
 
 	/* open the installation database */
 	result = database_open_write(&manager->inst_packages,
 	                             INSTALLATION_DATA_DATABASE_PATH);
 	if (RESULT_OK != result) {
+		log_write(LOG_ERROR, "Failed to open the package database\n");
 		goto end;
 	}
 
 	/* open the repository */
 	result = repo_open(&manager->repo, REPOSITORY_URL);
 	if (RESULT_OK != result) {
+		log_write(LOG_ERROR, "Failed to open the package repository\n");
 		goto close_inst;
 	}
 
 	/* fetch the repository database */
 	result = repo_get_database(&manager->repo, &manager->avail_packages);
 	if (RESULT_OK != result) {
+		log_write(LOG_ERROR, "Failed to fetch the package database\n");
 		goto close_repo;
 	}
 
@@ -137,7 +141,7 @@ result_t manager_is_installed(manager_t *manager, const char *name) {
 	                                        name,
 	                                        &installation_data);
 	if (RESULT_OK == result) {
-		log_write(LOG_DEBUG, "%s is already installed; skipping\n", name);
+		log_write(LOG_DEBUG, "%s is installed\n", name);
 		package_info_free(&installation_data);
 		result = RESULT_YES;
 	} else {
@@ -175,6 +179,7 @@ result_t manager_fetch(manager_t *manager,
 	/* check whether the package is already installed */
 	/* TODO: manager_is_installed() should return RESULT_NO upon success */
 	if (RESULT_YES == manager_is_installed(manager, name)) {
+		log_write(LOG_WARNING, "%s is already installed; skipping\n", name);
 		goto end;
 	}
 
@@ -207,6 +212,7 @@ result_t manager_fetch(manager_t *manager,
 	log_write(LOG_INFO, "Downloading %s\n", info.p_file_name);
 	result = repo_get_package(&manager->repo, &info, (const char *) &path);
 	if (RESULT_OK != result) {
+		log_write(LOG_ERROR, "Failed to fetch %s\n", name);
 		goto pop_from_stack;
 	}
 

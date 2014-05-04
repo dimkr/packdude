@@ -3,12 +3,11 @@
 #include <unistd.h>
 #include <assert.h>
 
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz.c"
 #include <archive.h>
 #include <archive_entry.h>
 
 #include "log.h"
+#include "comp.h"
 #include "archive.h"
 
 #define EXTRACTION_OPTIONS (ARCHIVE_EXTRACT_OWNER | \
@@ -104,10 +103,7 @@ result_t archive_extract(unsigned char *contents,
 
 	/* decompress the archive */
 	log_write(LOG_DEBUG, "Decompress the package\n");
-	decompressed_archive = tinfl_decompress_mem_to_heap(contents,
-	                                                    size,
-	                                                    &decompressed_size,
-	                                                    0);
+	decompressed_archive = comp_decompress(contents, size, &decompressed_size);
 	if (NULL == decompressed_archive) {
 		log_write(LOG_ERROR, "Failed to decompress the package\n");
 		goto close_output;

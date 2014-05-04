@@ -7,7 +7,7 @@
 #	include "fetch.h"
 
 #	define REPO_DATABASE_FILE_NAME "packages.sqlite3"
-#	define METADATA_DATABASE_PATH VAR_DIR"/packdude/"REPO_DATABASE_FILE_NAME
+#	define METADATA_DATABASE_PATH "."VAR_DIR"/packdude/"REPO_DATABASE_FILE_NAME
 
 typedef struct {
 	const char *url;
