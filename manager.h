@@ -8,16 +8,18 @@
 
 #	define DEFAULT_PREFIX "/"
 
-#	define REPOSITORY_URL "ftp://dimakrasner.com/packdude"
+#	define REPOSITORY_URL "http://repo.dimakrasner.com:1024"
 
 #	define PACKAGE_ARCHIVE_DIR "."VAR_DIR"/packdude/archive"
 
-#	define INSTALLATION_DATA_DATABASE_PATH "."VAR_DIR"/packdude/install.sqlite3"
+#	define INSTALLATION_DATA_DATABASE_PATH "."VAR_DIR"/packdude/data.sqlite3"
 
 #	define INSTALLATION_REASON_USER "user"
 #	define INSTALLATION_REASON_DEPENDENCY "dependency"
 
 #	define ARCHITECTURE_INDEPENDENT "all"
+
+#	define NO_DEPENDENCIES "-"
 
 typedef struct {
 	repo_t repo;
@@ -25,6 +27,11 @@ typedef struct {
 	database_t inst_packages;
 	node_t *inst_stack;
 } manager_t;
+
+typedef struct {
+	manager_t *manager;
+	unsigned int removed;
+} manager_cleanup_params_t;
 
 typedef result_t (*dependency_callback_t)(const char *name, void *arg);
 
@@ -39,6 +46,8 @@ result_t manager_for_each_dependency(manager_t *manager,
 result_t manager_fetch(manager_t *manager,
                        const char *name,
                        const char *reason);
+
+result_t manager_can_remove(manager_t *manager, const char *name);
 
 result_t manager_remove(manager_t *manager, const char *name);
 

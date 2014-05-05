@@ -25,7 +25,7 @@ end:
 	return result;
 }
 
-size_t _append_to_file(char *ptr, size_t size, size_t nmemb, FILE *file) {
+size_t _append_to_file(const void *ptr, size_t size, size_t nmemb, FILE *file) {
 	log_write(LOG_DEBUG, "Received a chunk of %u bytes\n", (size * nmemb));
 	return fwrite(ptr, size, nmemb, file);
 }
@@ -77,10 +77,10 @@ end:
 	return result;
 }
 
-size_t _append_to_buffer(char *ptr,
-                        size_t size,
-                        size_t nmemb,
-                        fetcher_buffer_t *buffer) {
+size_t _append_to_buffer(const void *ptr,
+                         size_t size,
+                         size_t nmemb,
+                         void *buffer) {
 	/* the enlarged buffer */
 	fetcher_buffer_t new_buffer = {0};
 
@@ -94,15 +94,18 @@ size_t _append_to_buffer(char *ptr,
 	bytes_available = size * nmemb;
 
 	/* enlarge the buffer */
-	new_buffer.size = buffer->size + bytes_available;
-	new_buffer.buffer = realloc(buffer->buffer, new_buffer.size);
+	new_buffer.size = ((fetcher_buffer_t *) buffer)->size + bytes_available;
+	new_buffer.buffer = realloc(((fetcher_buffer_t *) buffer)->buffer,
+	                            new_buffer.size);
 	if (NULL == new_buffer.buffer) {
-		free(buffer->buffer);
+		free(((fetcher_buffer_t *) buffer)->buffer);
 		goto end;
 	}
 
 	/* copy the data to the buffer */
-	(void) memcpy(&new_buffer.buffer[buffer->size], ptr, bytes_available);
+	(void) memcpy(&new_buffer.buffer[((fetcher_buffer_t *) buffer)->size],
+	              ptr,
+	              bytes_available);
 	(void) memcpy(buffer, &new_buffer, sizeof(fetcher_buffer_t));
 
 	/* report success */

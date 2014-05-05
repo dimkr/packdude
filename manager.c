@@ -23,6 +23,7 @@ result_t manager_new(manager_t *manager, const char *prefix) {
 
 	/* open the installation database */
 	result = database_open_write(&manager->inst_packages,
+	                             DATABASE_TYPE_INSTALLATION_DATA,
 	                             INSTALLATION_DATA_DATABASE_PATH);
 	if (RESULT_OK != result) {
 		log_write(LOG_ERROR, "Failed to open the package database\n");
@@ -99,7 +100,7 @@ result_t manager_for_each_dependency(manager_t *manager,
 	}
 
 	/* if the package has no dependencies, do nothing */
-	if (0 == strlen(info.p_deps)) {
+	if (0 == strcmp(NO_DEPENDENCIES, info.p_deps)) {
 		goto free_metadata;
 	}
 
@@ -213,6 +214,9 @@ result_t manager_fetch(manager_t *manager,
 	package_info_free(&info);
 	result = database_get_metadata(&manager->avail_packages, name, &info);
 	if (RESULT_OK != result) {
+		log_write(LOG_ERROR,
+		          "Failed to locate %s in the package database\n",
+		          name);
 		goto pop_from_stack;
 	}
 
@@ -348,16 +352,11 @@ end:
 	return abort;
 }
 
-result_t manager_remove(manager_t *manager, const char *name) {
+result_t _remove(manager_t *manager, const char *name) {
 	/* the return value */
 	result_t result = RESULT_OK;
 
-	log_write(LOG_INFO, "Removing %s\n", name);
-
-	/* make sure the package is installed */
-	if (RESULT_YES != manager_is_installed(manager, name)) {
-		goto end;
-	}
+	log_write(LOG_INFO, "Removing files installed by %s\n", name);
 
 	/* remove the package */
 	result = package_remove(name, &manager->inst_packages);
@@ -365,14 +364,31 @@ result_t manager_remove(manager_t *manager, const char *name) {
 		goto end;
 	}
 
-	/* remove unneeded dependencies */
-	result = manager_cleanup(manager);
+	/* report success */
+	log_write(LOG_INFO, "Successfully removed %s\n", name);
+	result = RESULT_OK;
+
+end:
+	return result;
+}
+
+result_t manager_remove(manager_t *manager, const char *name) {
+	/* the return value */
+	result_t result = RESULT_OK;
+
+	/* make sure the package can be removed - if it's not installed, this check
+	 * will fail  */
+	if (RESULT_YES == manager_can_remove(manager, name)) {
+		goto end;
+	}
+
+	/* remove the package */
+	result = _remove(manager, name);
 	if (RESULT_OK != result) {
 		goto end;
 	}
 
 	/* report success */
-	log_write(LOG_INFO, "Successfully removed %s\n", name);
 	result = RESULT_OK;
 
 end:
@@ -419,7 +435,7 @@ result_t manager_can_remove(manager_t *manager, const char *name) {
 	if (RESULT_ABORTED == result) {
 		result = RESULT_NO;
 	} else {
-		log_write(LOG_INFO, "%s is no longer needed\n", name);
+		log_write(LOG_DEBUG, "%s is no longer needed\n", name);
 		result = RESULT_YES;
 	}
 
@@ -427,21 +443,20 @@ end:
 	return result;
 }
 
-int _remove_unneeded(manager_t *manager,
+int _remove_unneeded(manager_cleanup_params_t *params,
                      int count,
                      char **values,
                      char **names) {
-	/* the number of removed packages */
-	unsigned int removed_packages = 0;
-
 	log_write(LOG_DEBUG,
 	          "Attempting to auto-remove %s\n",
 	          values[PACKAGE_FIELD_NAME]);
 
 	/* remove all uneeded packages */
-	if (RESULT_YES == manager_can_remove(manager, values[PACKAGE_FIELD_NAME])) {
-		++removed_packages;
-		if (RESULT_OK != manager_remove(manager, values[PACKAGE_FIELD_NAME])) {
+	if (RESULT_YES == manager_can_remove(params->manager,
+	                                     values[PACKAGE_FIELD_NAME])) {
+		if (RESULT_OK == _remove(params->manager, values[PACKAGE_FIELD_NAME])) {
+			++(params->removed);
+		} else {
 			log_write(LOG_ERROR,
 			          "Failed to auto-remove %s\n",
 			          values[PACKAGE_FIELD_NAME]);
@@ -454,22 +469,33 @@ int _remove_unneeded(manager_t *manager,
 	}
 
 	return 0;
-
-	/* report success only when at least pacakge was removed */
-	if (0 < removed_packages) {
-		return 0;
-	}
-
-	return 1;
 }
 
 result_t manager_cleanup(manager_t *manager) {
+	/* the callback parameters */
+	manager_cleanup_params_t params = {0};
+
+	/* the return value */
+	result_t result = RESULT_OK;
 
 	assert(NULL != manager);
 
 	log_write(LOG_INFO, "Cleaning up unneeded packages\n");
 
-	return database_for_each_inst_package(&manager->inst_packages,
-	                                      (query_callback_t) _remove_unneeded,
-	                                      manager);
+	/* remove unneeded packages again and again, until no uneeded packages are
+	 * found */
+	do {
+		params.manager = manager;
+		params.removed = 0;
+		result = database_for_each_inst_package(
+			                                &manager->inst_packages,
+	                                        (query_callback_t) _remove_unneeded,
+	                                        &params);
+		if (RESULT_OK != result) {
+			break;
+		}
+		log_write(LOG_DEBUG, "Removed %u packages\n", params.removed);
+	} while (0 < params.removed);
+
+	return result;
 }

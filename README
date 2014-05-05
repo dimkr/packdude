@@ -30,6 +30,17 @@ packdude depends on:
 
 Additinally, packdude contains miniz (https://code.google.com/p/miniz/).
 
+Usage
+=====
+
+  - First, compile your favorite libraries and applications as usual. Put each
+    in a tar archive (https://wikipedia.org/wiki/Tar_(file_format)).
+  - Then, use dudepack to convert each archive into a packdude package.
+  - Use repodude to generate a package metadata database.
+  - Upload the packages and the database to the root directory of a web server
+    and name the database "repo.sqlite3".
+  - Run dudepack.
+
 FAQ
 ===
 
@@ -99,6 +110,16 @@ example, complete history of executed queries).
 Moreover, using an embedded database makes it possible to store the metadata of
 all packages of a repository in a single file that doesn't need to be parsed
 (unlike text files).
+
+  Why support only one repository?
+  --------------------------------
+
+Having only one repository makes the package manager much simpler. Separating
+packages into multiple repositories is nothing but a convenience for its
+developers.
+
+Also, that repository can be a mirror redirector, a web server that redirects
+each client to the closest mirror.
 
 Credits and Legal Information
 =============================

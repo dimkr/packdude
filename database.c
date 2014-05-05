@@ -13,7 +13,10 @@
 #include "log.h"
 #include "database.h"
 
-static const char g_initialization_query[] = DATABASE_CREATION_QUERY;
+static const char *g_initialization_queries[] = {
+	METADATA_DATABASE_CREATION_QUERY,
+	INSTALLATION_DATA_DATABASE_CREATION_QUERY
+};
 
 void package_info_free(package_info_t *info) {
 	/* a loop index */
@@ -99,7 +102,9 @@ end:
 	return result;
 }
 
-result_t database_open_write(database_t *database, const char *path) {
+result_t database_open_write(database_t *database,
+                             const database_type_t type,
+                             const char *path) {
 	/* the database attributes */
 	struct stat attributes = {0};
 
@@ -112,7 +117,7 @@ result_t database_open_write(database_t *database, const char *path) {
 	assert(NULL != database);
 	assert(NULL != path);
 
-	/* check whether the database exists */
+	/* check whether the database exists - if no, initialize it */
 	if (-1 == stat(path, &attributes)) {
 		if (ENOENT != errno) {
 			goto end;
@@ -129,10 +134,10 @@ result_t database_open_write(database_t *database, const char *path) {
 		goto end;
 	}
 
-	/* if the database was just created, create all tables */
+	/* if the database should be initialized, create empty tables */
 	if (false == exists) {
 		result = _run_query(database,
-		                    (const char *) &g_initialization_query,
+		                    g_initialization_queries[(unsigned int) type],
 		                    NULL,
 		                    NULL);
 		if (RESULT_OK != result) {
@@ -152,7 +157,7 @@ void database_close(database_t *database) {
 	assert(NULL != database);
 
 	/* close the database */
-	(void) sqlite3_close_v2(database->handle);
+	(void) sqlite3_close(database->handle);
 }
 
 int _copy_info(void *arg, int count, char **values, char **names) {
@@ -248,6 +253,43 @@ result_t database_set_installation_data(database_t *database,
 	         info->p_arch,
 	         info->p_deps,
 	         info->p_reason)) {
+		goto end;
+	}
+
+	/* run the query */
+	result = _run_query(database, (const char *) &query, NULL, NULL);
+	if (SQLITE_OK != result) {
+		goto end;
+	}
+
+	/* report success */
+	result = RESULT_OK;
+
+end:
+	return result;
+}
+
+result_t database_set_metadata(database_t *database, const package_info_t *info) {
+	/* the executed query */
+	char query[MAX_SQL_QUERY_SIZE];
+
+	/* the return value */
+	result_t result = RESULT_CORRUPT_DATA;
+
+	assert(NULL != database);
+	assert(NULL != database->handle);
+	assert(NULL != info);
+
+	/* format the query */
+	if (sizeof(query) <= snprintf(
+		     (char *) query,
+	         sizeof(query),
+	         "INSERT INTO packages VALUES ('%s', '%s', '%s', '%s', '%s', NULL)",
+	         info->p_name,
+	         info->p_version,
+	         info->p_file_name,
+	         info->p_arch,
+	         info->p_deps)) {
 		goto end;
 	}
 

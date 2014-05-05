@@ -148,7 +148,7 @@ result_t package_install(const char *name,
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
 
-	log_write(LOG_INFO, "Installing %s\n", name);
+	log_write(LOG_INFO, "Unpacking %s\n", name);
 
 	/* read the package */
 	result = _read_package(path, &contents, &size);
@@ -189,10 +189,10 @@ int _remove_file(database_t *database, int count, char **values, char **names) {
 	/* the return value */
 	int abort = 0;
 
-	log_write(LOG_DEBUG, "Removing %s\n", values[1]);
+	log_write(LOG_DEBUG, "Removing %s\n", values[FILE_FIELD_PATH]);
 
 	/* determine the file type - if it doesn't exist, it's fine */
-	if (-1 == stat(values[1], &attributes)) {
+	if (-1 == lstat(values[FILE_FIELD_PATH], &attributes)) {
 		if (ENOENT != errno) {
 			abort = 1;
 		}
@@ -201,19 +201,26 @@ int _remove_file(database_t *database, int count, char **values, char **names) {
 
 	/* delete the file */
 	if (S_ISDIR(attributes.st_mode)) {
-		if (-1 == rmdir(values[1])) {
+		if (-1 == rmdir(values[FILE_FIELD_PATH])) {
 			if (ENOTEMPTY != errno) {
+				log_write(LOG_ERROR,
+				          "Failed to remove %s\n",
+				          values[FILE_FIELD_PATH]);
 				abort = 1;
 			}
 		}
 	} else {
-		if (-1 == unlink(values[1])) {
+		if (-1 == unlink(values[FILE_FIELD_PATH])) {
+			log_write(LOG_ERROR,
+			          "Failed to remove %s\n",
+			          values[FILE_FIELD_PATH]);
 			abort = 1;
 		}
 	}
 
 	/* unregister the file */
-	if (RESULT_OK != database_unregister_path(database, values[1])) {
+	if (RESULT_OK != database_unregister_path(database,
+	                                          values[FILE_FIELD_PATH])) {
 		abort = 1;
 	}
 

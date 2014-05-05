@@ -21,14 +21,14 @@ result_t _extract_file(struct archive *input, struct archive *output) {
 	/* the return value */
 	result_t result = RESULT_OK;
 
-	/* a data block */
-	const void *block = NULL;
+	/* the data block offset */
+	__LA_INT64_T offset = 0LL;
 
 	/* the data block size */
 	size_t size = 0;
 
-	/* the data block offset */
-	off_t offset = 0;
+	/* a data block */
+	const void *block = NULL;
 
 	assert(NULL != input);
 	assert(NULL != output);

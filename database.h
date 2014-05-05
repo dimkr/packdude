@@ -2,9 +2,20 @@
 #	define _DATABASE_H_INCLUDED
 
 #	include <sqlite3.h>
+
 #	include "result.h"
 
-#	define DATABASE_CREATION_QUERY \
+#	define METADATA_DATABASE_CREATION_QUERY \
+	"BEGIN TRANSACTION;\n" \
+	"CREATE TABLE packages (name TEXT,\n" \
+	"                       version TEXT,\n" \
+	"                       file_name TEXT,\n" \
+	"                       arch TEXT,\n" \
+	"                       deps TEXT,\n" \
+	"                       id INTEGER PRIMARY KEY);\n" \
+	"COMMIT;"
+
+#	define INSTALLATION_DATA_DATABASE_CREATION_QUERY \
 	"BEGIN TRANSACTION;\n" \
 	"CREATE TABLE packages (name TEXT,\n" \
 	"                       version TEXT,\n" \
@@ -18,6 +29,13 @@
 	"                    id INTEGER PRIMARY KEY);\n" \
 	"COMMIT;"
 
+typedef unsigned int database_type_t;
+
+enum database_types {
+	DATABASE_TYPE_METADATA          = 0,
+	DATABASE_TYPE_INSTALLATION_DATA = 1,
+};
+
 #	define MAX_SQL_QUERY_SIZE (2048)
 
 typedef int package_field_t;
@@ -29,7 +47,13 @@ enum package_fields {
 	PACKAGE_FIELD_ARCH      = 3,
 	PACKAGE_FIELD_DEPS      = 4,
 	PACKAGE_FIELD_REASON    = 5,
-	PACKAGE_FIELD_ID        = 6,
+	PACKAGE_FIELD_ID        = 5,
+};
+
+enum file_ {
+	FILE_FIELD_PACKAGE = 0,
+	FILE_FIELD_PATH    = 1,
+	FILE_FIELD_ID      = 2
 };
 
 #	define METADATA_FIELDS_COUNT (6)
@@ -59,7 +83,10 @@ typedef int (*query_callback_t) (void *arg,
                                  char **names);
 
 result_t database_open_read(database_t *database, const char *path);
-result_t database_open_write(database_t *database, const char *path);
+result_t database_open_write(database_t *database,
+                             const database_type_t type,
+                             const char *path);
+
 void database_close(database_t *database);
 
 result_t database_get(database_t *database,
@@ -68,6 +95,8 @@ result_t database_get(database_t *database,
 
 #	define database_get_metadata database_get
 #	define database_get_installation_data database_get
+
+result_t database_set_metadata(database_t *database, const package_info_t *info);
 
 result_t database_set_installation_data(database_t *database,
                                         const package_info_t *info);

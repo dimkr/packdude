@@ -87,6 +87,11 @@ done:
 		if (RESULT_OK != manager_remove(&manager, package)) {
 			goto close_package_manager;
 		}
+
+		/* once the package is removed, clean up all unneeded dependencies */
+		if (RESULT_OK != manager_cleanup(&manager)) {
+			goto close_package_manager;
+		}
 	}
 
 	/* report success */
