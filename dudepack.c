@@ -33,6 +33,12 @@ int main(int argc, char *argv[]) {
 	/* the compressed archive size */
 	size_t compressed_size = 0;
 
+	/* make sure an archive and an output file were specified */
+	if (3 != argc) {
+		log_dump("Usage: dudepack ARCHIVE PACKAGE\n");
+		goto end;
+	}
+
 	/* get the archive size */
 	log_write(LOG_DEBUG, "Getting the size of %s\n", argv[1]);
 	if (-1 == stat(argv[1], &attributes)) {

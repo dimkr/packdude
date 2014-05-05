@@ -1,6 +1,8 @@
 #ifndef _LOG_H_INCLUDED
 #	define _LOG_H_INCLUDED
 
+#	include <unistd.h>
+
 typedef unsigned int verbosity_level_t;
 
 enum verbosity_levels {
@@ -14,5 +16,7 @@ enum verbosity_levels {
 
 void log_set_level(const verbosity_level_t level);
 void log_write(const verbosity_level_t level, const char *format, ...);
+
+#	define log_dump(x) (void) write(STDOUT_FILENO, x, sizeof(x) - sizeof(char))
 
 #endif

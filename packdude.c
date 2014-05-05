@@ -8,7 +8,7 @@
 #include "manager.h"
 
 void _show_help() {
-	(void) printf("Usage: packdude [-d] [-p PREFIX] -i|-r PACKAGE\n");
+	log_dump("Usage: packdude [-d] [-p PREFIX] -i|-r PACKAGE\n");
 	exit(EXIT_FAILURE);
 }
 
