@@ -96,6 +96,12 @@ result_t package_verify(const char *path) {
 	archive = contents + sizeof(package_header_t);
 	size -= sizeof(package_header_t);
 
+	/* verify the package is targeted at the running package manager version */
+	if (VERSION != ((package_header_t *) contents)->version) {
+		result = RESULT_INCOMPATIBLE;
+		goto free_contents;
+	}
+
 	/* verify the package checksum */
 	if ((mz_ulong) (((package_header_t *) contents)->checksum) != mz_crc32(
 	                                                              MZ_CRC32_INIT,

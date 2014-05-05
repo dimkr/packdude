@@ -52,6 +52,11 @@ result_t fetcher_fetch_to_file(fetcher_t *fetcher,
 	                                 destination)) {
 		goto end;
 	}
+	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
+	                                 CURLOPT_USERAGENT,
+	                                 FETCHER_USER_AGENT)) {
+		goto end;
+	}
 
 	/* fetch the URL */
 	if (CURLE_OK != curl_easy_perform(fetcher->handle)) {
@@ -125,6 +130,11 @@ result_t fetcher_fetch_to_memory(fetcher_t *fetcher,
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
 	                                 CURLOPT_WRITEDATA,
 	                                 buffer)) {
+		goto end;
+	}
+	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
+	                                 CURLOPT_USERAGENT,
+	                                 FETCHER_USER_AGENT)) {
 		goto end;
 	}
 

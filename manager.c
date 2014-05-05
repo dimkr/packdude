@@ -140,12 +140,17 @@ result_t manager_is_installed(manager_t *manager, const char *name) {
 	result = database_get_installation_data(&manager->inst_packages,
 	                                        name,
 	                                        &installation_data);
-	if (RESULT_OK == result) {
-		log_write(LOG_DEBUG, "%s is installed\n", name);
-		package_info_free(&installation_data);
-		result = RESULT_YES;
-	} else {
-		log_write(LOG_DEBUG, "%s is not installed\n", name);
+	switch (result) {
+		case RESULT_OK:
+			log_write(LOG_DEBUG, "%s is installed\n", name);
+			package_info_free(&installation_data);
+			result = RESULT_YES;
+			break;
+
+		case RESULT_NOT_FOUND:
+			log_write(LOG_DEBUG, "%s is not installed\n", name);
+			result = RESULT_NO;
+			break;
 	}
 
 	return result;
@@ -177,10 +182,21 @@ result_t manager_fetch(manager_t *manager,
 	}
 
 	/* check whether the package is already installed */
-	/* TODO: manager_is_installed() should return RESULT_NO upon success */
-	if (RESULT_YES == manager_is_installed(manager, name)) {
-		log_write(LOG_WARNING, "%s is already installed; skipping\n", name);
-		goto end;
+	result = manager_is_installed(manager, name);
+	switch (result) {
+		case RESULT_NO:
+			break;
+
+		case RESULT_YES:
+			log_write(LOG_WARNING, "%s is already installed; skipping\n", name);
+			result = RESULT_OK;
+			goto end;
+
+		default:
+			log_write(LOG_ERROR,
+			          "Failed to determine whether %s is installed\n",
+			          name);
+			goto end;
 	}
 
 	log_write(LOG_DEBUG, "%s is not installed\n", name);
@@ -197,6 +213,15 @@ result_t manager_fetch(manager_t *manager,
 	package_info_free(&info);
 	result = database_get_metadata(&manager->avail_packages, name, &info);
 	if (RESULT_OK != result) {
+		goto pop_from_stack;
+	}
+
+	/* make sure the package is compatible with the architecture the package
+	 * manager runs on */
+	if ((0 != strcmp(ARCH, info.p_arch)) &&
+	    (0 != strcmp(ARCHITECTURE_INDEPENDENT, info.p_arch))) {
+		log_write(LOG_ERROR, "The package is incompatible with %s\n", ARCH);
+		result = RESULT_INCOMPATIBLE;
 		goto pop_from_stack;
 	}
 

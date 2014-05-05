@@ -28,7 +28,8 @@ enum package_fields {
 	PACKAGE_FIELD_FILE_NAME = 2,
 	PACKAGE_FIELD_ARCH      = 3,
 	PACKAGE_FIELD_DEPS      = 4,
-	PACKAGE_FIELD_REASON    = 5
+	PACKAGE_FIELD_REASON    = 5,
+	PACKAGE_FIELD_ID        = 6,
 };
 
 #	define METADATA_FIELDS_COUNT (6)
@@ -45,6 +46,7 @@ typedef struct {
 #	define p_arch _fields[PACKAGE_FIELD_ARCH]
 #	define p_deps _fields[PACKAGE_FIELD_DEPS]
 #	define p_reason _fields[PACKAGE_FIELD_REASON]
+#	define p_id _fields[PACKAGE_FIELD_ID]
 
 typedef struct {
 	sqlite3 *handle;

@@ -214,7 +214,7 @@ result_t database_get(database_t *database,
 
 	/* if the package was not found, report failure */
 	if (NULL == info->p_name) {
-		result = RESULT_DATABASE_ERROR;
+		result = RESULT_NOT_FOUND;
 		goto end;
 	}
 

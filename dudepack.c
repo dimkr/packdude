@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
 	/* write the package header */
 	log_write(LOG_INFO, "Writing %s\n", argv[2]);
-	header.version = 1;
+	header.version = VERSION;
 	if (sizeof(header) != write(output, &header, sizeof(header))) {
 		goto free_compressed_contents;
 	}

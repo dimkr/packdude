@@ -9,7 +9,13 @@ DOC_DIR ?= /usr/share/doc
 VAR_DIR ?= /var
 ARCH ?= $(shell uname -m)
 
-CFLAGS += -std=gnu99 -Wall -pedantic -DVAR_DIR=\"$(VAR_DIR)\" -DARCH=\"$(ARCH)\" \
+PACKAGE = packdude
+VERSION = 1
+CFLAGS += -std=gnu99 -Wall -pedantic \
+          -DVAR_DIR=\"$(VAR_DIR)\" \
+          -DARCH=\"$(ARCH)\" \
+          -DPACKAGE=\"$(PACKAGE)\" \
+          -DVERSION=$(VERSION) \
           $(shell $(PKG_CONFIG) --cflags libcurl libarchive sqlite3)
 LDFLAGS += $(shell $(PKG_CONFIG) --libs libcurl libarchive sqlite3)
 INSTALL = install -v

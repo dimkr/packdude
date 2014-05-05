@@ -17,6 +17,8 @@
 #	define INSTALLATION_REASON_USER "user"
 #	define INSTALLATION_REASON_DEPENDENCY "dependency"
 
+#	define ARCHITECTURE_INDEPENDENT "all"
+
 typedef struct {
 	repo_t repo;
 	database_t avail_packages;

@@ -8,6 +8,10 @@
 
 #	define MAX_URL_LENGTH (1024)
 
+#	define __PASTE(x) # x
+#	define _PASTE(x) __PASTE(x)
+#	define FETCHER_USER_AGENT (PACKAGE"/"_PASTE(VERSION))
+
 typedef struct {
 	CURL *handle;
 } fetcher_t;
