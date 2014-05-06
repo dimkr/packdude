@@ -6,53 +6,146 @@
 #	include "stack.h"
 #	include "result.h"
 
+/*!
+ * @defgroup manager Manager
+ * @brief High-level package management logic
+ * @{ */
+
+/*!
+ * @def DEFAULT_PREFIX
+ * @brief The default operation prefix */
 #	define DEFAULT_PREFIX "/"
 
-#	define REPOSITORY_URL "http://repo.dimakrasner.com:1024"
-
+/*!
+ * @def PACKAGE_ARCHIVE_DIR
+ * @brief The package archive path
+ *
+ * All fetched packages are stored under this directory. */
 #	define PACKAGE_ARCHIVE_DIR "."VAR_DIR"/packdude/archive"
 
+/*!
+ * @def INSTALLATION_DATA_DATABASE_PATH
+ * @brief The installation data database path */
 #	define INSTALLATION_DATA_DATABASE_PATH "."VAR_DIR"/packdude/data.sqlite3"
 
+/*!
+ * @def INSTALLATION_REASON_USER
+ * @brief The installation reason of packages installed by the user */
 #	define INSTALLATION_REASON_USER "user"
+
+/*!
+ * @def INSTALLATION_REASON_DEPENDENCY
+ * @brief The installation reason of packages installed as dependencies */
 #	define INSTALLATION_REASON_DEPENDENCY "dependency"
 
+/*!
+ * @def ARCHITECTURE_INDEPENDENT
+ * @brief The target architecture of architecture-independent packages */
 #	define ARCHITECTURE_INDEPENDENT "all"
 
+/*!
+ * @def NO_DEPENDENCIES
+ * @brief The contents of an empty dependencies list */
 #	define NO_DEPENDENCIES "-"
 
+/*!
+ * @struct manager_t
+ * @brief A package manager */
 typedef struct {
-	repo_t repo;
-	database_t avail_packages;
-	database_t inst_packages;
-	node_t *inst_stack;
+	repo_t repo; /*!< The repository */
+	database_t avail_packages; /*!< The package metadata database */
+	database_t inst_packages; /*!< The installation data database */
+	node_t *inst_stack; /*!< The installation stack */
 } manager_t;
 
+/*!
+ * @struct manager_cleanup_params_t
+ * @brief The parameters of _remove_unneeded() */
 typedef struct {
-	manager_t *manager;
-	unsigned int removed;
+	manager_t *manager; /*!< The package manager */
+	unsigned int removed; /*!< The number of removed packages */
 } manager_cleanup_params_t;
 
+/*!
+ * @typedef dependency_callback_t
+ * @brief A callback executed for each dependency */
 typedef result_t (*dependency_callback_t)(const char *name, void *arg);
 
+/*!
+ * @fn result_t manager_new(manager_t *manager, const char *prefix)
+ * @brief Starts a package manager instance
+ * @param manager A package manager
+ * @param prefix The package manager operation prefix
+ * @see manager_free
+ * @see DEFAULT_PREFIX */
 result_t manager_new(manager_t *manager, const char *prefix);
+
+/*!
+ * @fn void manager_free(manager_t *manager)
+ * @brief Shuts down a package manager instance
+ * @param manager A package manager
+ * @see manager_new */
 void manager_free(manager_t *manager);
 
+/*!
+ * @fn result_t manager_for_each_dependency(
+ *                                         manager_t *manager,
+ *                                         const char *name,
+ *                                         const dependency_callback_t callback,
+ *                                         void *arg)
+ * @brief Runs a callback for each dependency of a package
+ * @param manager A package manager
+ * @param name The package name
+ * @param callback The callback to execute
+ * @param arg A pointer passed to the callback */
 result_t manager_for_each_dependency(manager_t *manager,
                                      const char *name,
                                      const dependency_callback_t callback,
                                      void *arg);
 
+/*!
+ * @fn result_t manager_fetch(manager_t *manager,
+ *                            const char *name,
+ *                            const char *reason)
+ * @brief Recursively fetches and installs a package and its dependencies
+ * @param manager A package manager
+ * @param name The package name
+ * @param reason The package installation reason
+ * @see INSTALLATION_REASON_USER
+ * @see INSTALLATION_REASON_DEPENDENCY */
 result_t manager_fetch(manager_t *manager,
                        const char *name,
                        const char *reason);
 
+/*!
+ * @fn result_t manager_can_remove(manager_t *manager, const char *name)
+ * @brief Determines whether a package can be removed safely
+ * @param manager A package manager
+ * @param name The package name */
 result_t manager_can_remove(manager_t *manager, const char *name);
 
+/*!
+ * @fn result_t manager_remove(manager_t *manager, const char *name)
+ * @brief Removes a package
+ * @param manager A package manager
+ * @param name The package name */
 result_t manager_remove(manager_t *manager, const char *name);
 
+/*!
+ * @fn result_t manager_is_installed(manager_t *manager, const char *name)
+ * @brief Determines whether a package is currently installed
+ * @param manager A package manager
+ * @param name The package name */
 result_t manager_is_installed(manager_t *manager, const char *name);
 
+/*!
+ * @fn result_t manager_cleanup(manager_t *manager)
+ * @brief Removes all unneeded dependencies
+ * @param manager A package manager
+ * @param name The package name */
 result_t manager_cleanup(manager_t *manager);
+
+/*!
+ * @} */
 
 #endif

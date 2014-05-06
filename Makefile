@@ -8,6 +8,7 @@ MAN_DIR ?= /usr/share/man
 DOC_DIR ?= /usr/share/doc
 VAR_DIR ?= /var
 ARCH ?= $(shell uname -m)
+REPO ?= http://repo.dimakrasner.com:1024
 
 PACKAGE = packdude
 VERSION = 1
@@ -16,6 +17,7 @@ CFLAGS += -std=gnu99 -Wall -pedantic \
           -DARCH=\"$(ARCH)\" \
           -DPACKAGE=\"$(PACKAGE)\" \
           -DVERSION=$(VERSION) \
+          -DREPO=\"$(REPO)\"
           $(shell $(PKG_CONFIG) --cflags libcurl libarchive sqlite3)
 
 INSTALL = install -v
@@ -47,6 +49,9 @@ repodude: repodude.c database.o log.o
 packdude: packdude.o manager.o database.o fetch.o repo.o log.o stack.o \
           package.o archive.o comp.o miniz.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(LIBCURL_LIBS) $(LIBARCHIVE_LIBS) $(SQLITE_LIBS)
+
+doc: $(SRCS) $(HEADERS) doxygen.conf
+	doxygen doxygen.conf
 
 install: all
 	$(INSTALL) -D -m 755 packdude $(DESTDIR)/$(BIN_DIR)/packdude

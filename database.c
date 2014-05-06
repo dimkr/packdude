@@ -187,7 +187,7 @@ result_t database_get(database_t *database,
                       const char *name,
                       package_info_t *info) {
 	/* the executed query */
-	char query[MAX_SQL_QUERY_SIZE];
+	char query[MAX_SQL_QUERY_LENGTH];
 
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
@@ -233,7 +233,7 @@ end:
 result_t database_set_installation_data(database_t *database,
                                         const package_info_t *info) {
 	/* the executed query */
-	char query[MAX_SQL_QUERY_SIZE];
+	char query[MAX_SQL_QUERY_LENGTH];
 
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
@@ -271,7 +271,7 @@ end:
 
 result_t database_set_metadata(database_t *database, const package_info_t *info) {
 	/* the executed query */
-	char query[MAX_SQL_QUERY_SIZE];
+	char query[MAX_SQL_QUERY_LENGTH];
 
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
@@ -309,7 +309,7 @@ end:
 result_t database_remove_installation_data(database_t *database,
                                            const char *package) {
 	/* the executed query */
-	char query[MAX_SQL_QUERY_SIZE];
+	char query[MAX_SQL_QUERY_LENGTH];
 
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
@@ -345,7 +345,7 @@ result_t database_register_path(database_t *database,
                                 const char *path,
                                 const char *package) {
 	/* the executed query */
-	char query[MAX_SQL_QUERY_SIZE];
+	char query[MAX_SQL_QUERY_LENGTH];
 
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
@@ -381,7 +381,7 @@ end:
 
 result_t database_unregister_path(database_t *database, const char *path) {
 	/* the executed query */
-	char query[MAX_SQL_QUERY_SIZE];
+	char query[MAX_SQL_QUERY_LENGTH];
 
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
@@ -429,7 +429,7 @@ result_t database_for_each_file(database_t *database,
                                 const query_callback_t callback,
                                 void *arg) {
 	/* the executed query */
-	char query[MAX_SQL_QUERY_SIZE];
+	char query[MAX_SQL_QUERY_LENGTH];
 
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;

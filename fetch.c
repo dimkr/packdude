@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz.c"
-
 #include "log.h"
 #include "fetch.h"
 
@@ -150,48 +147,6 @@ result_t fetcher_fetch_to_memory(fetcher_t *fetcher,
 	}
 
 	/* report success */
-	result = RESULT_OK;
-
-end:
-	return result;
-}
-
-
-result_t fetcher_fetch_compressed_to_memory(fetcher_t *fetcher,
-                                            const char *url,
-                                            fetcher_buffer_t *buffer) {
-	/* the return value */
-	result_t result = RESULT_MEM_ERROR;
-
-	/* the decompressed data */
-	void *decompressed_data = NULL;
-
-	/* the decompressed data size */
-	size_t decompressed_size = 0;
-
-	/* fetch the URL */
-	result = fetcher_fetch_to_memory(fetcher, url, buffer);
-	if (RESULT_OK != result) {
-		goto end;
-	}
-
-	/* decompress the fetched data */
-	decompressed_data = tinfl_decompress_mem_to_heap(buffer->buffer,
-	                                                 buffer->size,
-	                                                 &decompressed_size,
-	                                                 0);
-
-	/* free the compressed data */
-	free(buffer->buffer);
-
-	/* upon failure to decompress the data, report failure */
-	if (NULL == decompressed_data) {
-		goto end;
-	}
-
-	/* report success */
-	buffer->buffer = decompressed_data;
-	buffer->size = decompressed_size;
 	result = RESULT_OK;
 
 end:

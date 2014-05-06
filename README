@@ -39,7 +39,7 @@ Usage
   - Use repodude to generate a package metadata database.
   - Upload the packages and the database to the root directory of a web server
     and name the database "repo.sqlite3".
-  - Run dudepack.
+  - Test the repository using packdude.
 
 FAQ
 ===

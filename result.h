@@ -1,6 +1,14 @@
 #ifndef _RESULT_H_INCLUDED
 #	define _RESULT_H_INCLUDED
 
+/*!
+ * @defgroup result Result
+ * @brief Common return values
+ * @{ */
+
+/*!
+ * @typedef result_t
+ * @brief A status code */
 typedef unsigned int result_t;
 
 enum results {
@@ -17,5 +25,8 @@ enum results {
 	RESULT_ABORTED           = 10,
 	RESULT_NOT_FOUND         = 11
 };
+
+/*!
+ * @} */
 
 #endif

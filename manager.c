@@ -31,7 +31,7 @@ result_t manager_new(manager_t *manager, const char *prefix) {
 	}
 
 	/* open the repository */
-	result = repo_open(&manager->repo, REPOSITORY_URL);
+	result = repo_open(&manager->repo, REPO);
 	if (RESULT_OK != result) {
 		log_write(LOG_ERROR, "Failed to open the package repository\n");
 		goto close_inst;
