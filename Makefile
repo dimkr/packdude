@@ -17,7 +17,7 @@ CFLAGS += -std=gnu99 -Wall -pedantic \
           -DARCH=\"$(ARCH)\" \
           -DPACKAGE=\"$(PACKAGE)\" \
           -DVERSION=$(VERSION) \
-          -DREPO=\"$(REPO)\"
+          -DREPO=\"$(REPO)\" \
           $(shell $(PKG_CONFIG) --cflags libcurl libarchive sqlite3)
 
 INSTALL = install -v
