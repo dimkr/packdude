@@ -8,11 +8,14 @@
 Overview
 ========
 
-packdude is a small package manager inspired by:
-  - pacman (https://www.archlinux.org/pacman/)
-  - PPM (http://bkhome.org/woof/ppm.htm).
+packdude is a lightweight, permissively-licensed package manager for Linux
+(https://www.kernel.org/) distributions.
 
-It's under development, in its early stages.
+It tries to combine:
+  - The speed and robustness of pacman (https://www.archlinux.org/pacman/)
+  - Easy creation of repositories, as with createrepo
+    (http://createrepo.baseurl.org/)
+  - The "autoremove" feature of Apt (https://wiki.debian.org/Apt)
 
 Features
 ========

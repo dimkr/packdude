@@ -11,6 +11,7 @@
 #include "archive.h"
 
 #define EXTRACTION_OPTIONS (ARCHIVE_EXTRACT_OWNER | \
+                            ARCHIVE_EXTRACT_PERM | \
                             ARCHIVE_EXTRACT_TIME | \
                             ARCHIVE_EXTRACT_UNLINK | \
                             ARCHIVE_EXTRACT_ACL | \

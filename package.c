@@ -37,6 +37,7 @@ result_t _read_package(const char *path,
 
 	/* make sure the package size is at bigger than the header size */
 	if (sizeof(package_header_t) >= *size) {
+		log_write(LOG_ERROR, "%s is too small to be a valid package\n", path);
 		result = RESULT_CORRUPT_DATA;
 		goto end;
 	}
