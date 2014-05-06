@@ -6,6 +6,7 @@
 #include "log.h"
 #include "database.h"
 
+/* the maximum length of an input line */
 #define MAX_LINE_LENGTH (1024)
 
 int main(int argc, char *argv[]) {
@@ -21,6 +22,12 @@ int main(int argc, char *argv[]) {
 	/* the length of an input line */
 	size_t length = 0;
 
+	/* a loop index */
+	unsigned int i = 0;
+
+	/* the exit code */
+	int exit_code = EXIT_FAILURE;
+
 	/* an input line */
 	char *line = NULL;
 
@@ -29,12 +36,6 @@ int main(int argc, char *argv[]) {
 
 	/* the input file */
 	FILE *input = NULL;
-
-	/* a loop index */
-	unsigned int i = 0;
-
-	/* the exit code */
-	int exit_code = EXIT_FAILURE;
 
 	/* make sure a CSV file and a database were specified */
 	if (3 != argc) {

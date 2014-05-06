@@ -5,8 +5,10 @@
 #include <assert.h>
 #include "log.h"
 
+/* the minimum verbosity level */
 static verbosity_level_t g_min_verbosity_level = DEFAULT_VERBOSITY_LEVEL;
 
+/* textual representations of all verbosity levels */
 static const char *g_verobosity_levels[] = {
 	"ERROR",
 	"WARNING",
@@ -19,23 +21,23 @@ void log_set_level(const verbosity_level_t level) {
 }
 
 void log_write(const verbosity_level_t level, const char *format, ...) {
-	/* the format string arguments */
-	va_list arguments = {{0}};
-
 	/* the current time, in textual form */
 	char textual_time[26] = {'\0'};
 
-	/* the current time, in binary form */
-	time_t now = 0;
+	/* the format string arguments */
+	va_list arguments = {{0}};
 
 	/* string length */
 	size_t length = 0;
 
-	assert(NULL != format);
+	/* the current time, in binary form */
+	time_t now = 0;
+
 	assert((LOG_DEBUG == level) ||
 	       (LOG_INFO == level) ||
 	       (LOG_WARNING == level) ||
 	       (LOG_ERROR == level));
+	assert(NULL != format);
 
 	/* if the message has a low verbosity level, ignore it */
 	if (g_min_verbosity_level < level) {

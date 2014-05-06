@@ -79,6 +79,9 @@ bool stack_contains(const node_t *stack,
 	/* the return value */
 	bool found = false;
 
+	assert(NULL != callback);
+	assert(NULL != data);
+
 	for ( ; NULL != node; node = node->next) {
 		if (0 == callback(node->data, data)) {
 			found = true;

@@ -15,6 +15,9 @@ int main(int argc, char *argv[]) {
 	/* the package header */
 	package_header_t header = {0};
 
+	/* the compressed archive size */
+	size_t compressed_size = 0;
+
 	/* the exit code */
 	int exit_code = EXIT_FAILURE;
 
@@ -29,9 +32,6 @@ int main(int argc, char *argv[]) {
 
 	/* the compressed archive contents */
 	unsigned char *compressed_archive = NULL;
-
-	/* the compressed archive size */
-	size_t compressed_size = 0;
 
 	/* make sure an archive and an output file were specified */
 	if (3 != argc) {

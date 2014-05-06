@@ -18,11 +18,11 @@
                             ARCHIVE_EXTRACT_XATTR)
 
 result_t _extract_file(struct archive *input, struct archive *output) {
-	/* the return value */
-	result_t result = RESULT_OK;
-
 	/* the data block offset */
 	__LA_INT64_T offset = 0LL;
+
+	/* the return value */
+	result_t result = RESULT_OK;
 
 	/* the data block size */
 	size_t size = 0;
@@ -67,11 +67,11 @@ result_t archive_extract(unsigned char *contents,
 	/* the return value */
 	result_t result = RESULT_MEM_ERROR;
 
-	/* the decompressed archive */
-	unsigned char *decompressed_archive = NULL;
-
 	/* the decompressed archive size */
 	size_t decompressed_size = 0;
+
+	/* the decompressed archive */
+	unsigned char *decompressed_archive = NULL;
 
 	/* the archive */
 	struct archive *input = NULL;

@@ -87,6 +87,9 @@ result_t repo_get_database(repo_t *repo, database_t *database) {
 	/* the return value */
 	result_t result = RESULT_DATABASE_ERROR;
 
+	assert(NULL != repo);
+	assert(NULL != database);
+
 	/* fetch the database */
 	log_write(LOG_INFO, "Fetching the package database from %s\n", repo->url);
 	result = _get_file(repo, REPO_DATABASE_FILE_NAME, METADATA_DATABASE_PATH);
@@ -110,8 +113,10 @@ end:
 result_t repo_get_package(repo_t *repo,
                           package_info_t *info,
                           const char *path) {
-	assert (NULL != info);
-	assert (NULL != info->p_file_name);
+	assert(NULL != repo);
+	assert(NULL != info);
+	assert(NULL != info->p_file_name);
+	assert(NULL != path);
 
 	return _get_file(repo, info->p_file_name, path);
 }

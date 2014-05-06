@@ -9,6 +9,8 @@ result_t fetcher_new(fetcher_t *fetcher) {
 	/* the return value */
 	result_t result = RESULT_MEM_ERROR;
 
+	assert(NULL != fetcher);
+
 	/* initialize an "easy" libcurl session */
 	fetcher->handle = curl_easy_init();
 	if (NULL == fetcher->handle) {
@@ -23,6 +25,9 @@ end:
 }
 
 size_t _append_to_file(const void *ptr, size_t size, size_t nmemb, FILE *file) {
+	assert(NULL != ptr);
+	assert(NULL != file);
+
 	log_write(LOG_DEBUG, "Received a chunk of %u bytes\n", (size * nmemb));
 	return fwrite(ptr, size, nmemb, file);
 }
@@ -32,6 +37,10 @@ result_t fetcher_fetch_to_file(fetcher_t *fetcher,
                                FILE *destination) {
 	/* the return value */
 	result_t result = RESULT_MEM_ERROR;
+
+	assert(NULL != fetcher);
+	assert(NULL != url);
+	assert(NULL != destination);
 
 	log_write(LOG_DEBUG, "Fetching %s\n", url);
 
@@ -87,6 +96,9 @@ size_t _append_to_buffer(const void *ptr,
 	/* the number of bytes handled */
 	size_t bytes_handled = 0;
 
+	assert(NULL != ptr);
+	assert(NULL != buffer);
+
 	/* calculate the number of available bytes */
 	bytes_available = size * nmemb;
 
@@ -117,6 +129,10 @@ result_t fetcher_fetch_to_memory(fetcher_t *fetcher,
                                  fetcher_buffer_t *buffer) {
 	/* the return value */
 	result_t result = RESULT_MEM_ERROR;
+
+	assert(NULL != fetcher);
+	assert(NULL != url);
+	assert(NULL != buffer);
 
 	/* set the input URL and the output file */
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
@@ -154,6 +170,8 @@ end:
 }
 
 void fetcher_free(fetcher_t *fetcher) {
+	assert(NULL != fetcher);
+
 	/* end the libcurl session */
 	curl_easy_cleanup(fetcher->handle);
 }

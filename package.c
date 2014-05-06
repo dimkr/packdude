@@ -25,6 +25,10 @@ result_t _read_package(const char *path,
 	/* the return value */
 	result_t result = RESULT_IO_ERROR;
 
+	assert(NULL != path);
+	assert(NULL != contents);
+	assert(NULL != size);
+
 	/* get the package size */
 	if (-1 == stat(path, &attributes)) {
 		goto end;
@@ -72,17 +76,19 @@ end:
 }
 
 result_t package_verify(const char *path) {
+	/* the package size */
+	size_t size = 0;
+
+	/* the return value */
+	result_t result = RESULT_CORRUPT_DATA;
+
 	/* the package contents */
 	unsigned char *contents = NULL;
 
 	/* the archive contained in the package */
 	unsigned char *archive = NULL;
 
-	/* the package size */
-	size_t size = 0;
-
-	/* the return value */
-	result_t result = RESULT_CORRUPT_DATA;
+	assert(NULL != path);
 
 	log_write(LOG_INFO, "Verifying the integrity of %s\n", path);
 
@@ -127,6 +133,11 @@ end:
 
 
 result_t _register_file(const char *path, file_register_params_t *params) {
+	assert(NULL != path);
+	assert(NULL != params);
+	assert(NULL != params->database);
+	assert(NULL != params->package);
+
 	return database_register_path(params->database, path, params->package);
 }
 
@@ -136,17 +147,21 @@ result_t package_install(const char *name,
 	/* the callback parameters */
 	file_register_params_t params = {0};
 
+	/* the package size */
+	size_t size = 0;
+
+	/* the return value */
+	result_t result = RESULT_CORRUPT_DATA;
+
 	/* the package contents */
 	unsigned char *contents = NULL;
 
 	/* the archive contained in the package */
 	unsigned char *archive = NULL;
 
-	/* the package size */
-	size_t size = 0;
-
-	/* the return value */
-	result_t result = RESULT_CORRUPT_DATA;
+	assert(NULL != name);
+	assert(NULL != path);
+	assert(NULL != database);
 
 	log_write(LOG_INFO, "Unpacking %s\n", name);
 
@@ -188,6 +203,9 @@ int _remove_file(database_t *database, int count, char **values, char **names) {
 
 	/* the return value */
 	int abort = 0;
+
+	assert(NULL != database);
+	assert(NULL != values[FILE_FIELD_PATH]);
 
 	log_write(LOG_DEBUG, "Removing %s\n", values[FILE_FIELD_PATH]);
 
@@ -231,6 +249,9 @@ end:
 result_t package_remove(const char *name, database_t *database) {
 	/* the return value */
 	result_t result = RESULT_OK;
+
+	assert(NULL != name);
+	assert(NULL != database);
 
 	/* delete the package files */
 	result = database_for_each_file(database,

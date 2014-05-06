@@ -124,6 +124,9 @@ end:
 }
 
 result_t _install_dependency(const char *name, void *manager) {
+	assert(NULL != name);
+	assert(NULL != manager);
+
 	return manager_fetch((manager_t *) manager,
 	                     name,
 	                     INSTALLATION_REASON_DEPENDENCY);
@@ -135,6 +138,9 @@ result_t manager_is_installed(manager_t *manager, const char *name) {
 
 	/* the return value */
 	result_t result = RESULT_NO;
+
+	assert(NULL != manager);
+	assert(NULL != name);
 
 	/* check whether the package is already installed */
 	log_write(LOG_DEBUG, "Checking whether %s is already installed\n", name);
@@ -172,8 +178,8 @@ result_t manager_fetch(manager_t *manager,
 	assert(NULL != manager);
 	assert(NULL != name);
 	assert(NULL != reason);
-	assert((0 == strcmp(INSTALLATION_REASON_USER, reason) ||
-	       (0 == strcmp(INSTALLATION_REASON_DEPENDENCY, reason))));
+	assert((0 == strcmp(INSTALLATION_REASON_USER, reason)) ||
+	       (0 == strcmp(INSTALLATION_REASON_DEPENDENCY, reason)));
 
 	/* if the package is currently being installed, do nothing */
 	if (true == stack_contains(manager->inst_stack,
@@ -301,6 +307,9 @@ end:
 }
 
 int _depends_on(char *name, int count, char **values, char **names) {
+	/* the return value */
+	int abort = 0;
+
 	/* the package dependencies */
 	char *dependencies = NULL;
 
@@ -310,8 +319,9 @@ int _depends_on(char *name, int count, char **values, char **names) {
 	/* a single dependency */
 	char *dependency = NULL;
 
-	/* the return value */
-	int abort = 0;
+	assert(NULL != name);
+	assert(NULL != values[PACKAGE_FIELD_NAME]);
+	assert(NULL != values[PACKAGE_FIELD_DEPS]);
 
 	/* do not check whether the package depends on itself */
 	if (0 == strcmp(values[PACKAGE_FIELD_NAME], name)) {
@@ -356,6 +366,9 @@ result_t _remove(manager_t *manager, const char *name) {
 	/* the return value */
 	result_t result = RESULT_OK;
 
+	assert(NULL != manager);
+	assert(NULL != name);
+
 	log_write(LOG_INFO, "Removing files installed by %s\n", name);
 
 	/* remove the package */
@@ -375,6 +388,9 @@ end:
 result_t manager_remove(manager_t *manager, const char *name) {
 	/* the return value */
 	result_t result = RESULT_OK;
+
+	assert(NULL != manager);
+	assert(NULL != name);
 
 	/* make sure the package can be removed - if it's not installed, this check
 	 * will fail  */
@@ -447,6 +463,10 @@ int _remove_unneeded(manager_cleanup_params_t *params,
                      int count,
                      char **values,
                      char **names) {
+	assert(NULL != params);
+	assert(NULL != params->manager);
+	assert(NULL != values[PACKAGE_FIELD_NAME]);
+
 	log_write(LOG_DEBUG,
 	          "Attempting to auto-remove %s\n",
 	          values[PACKAGE_FIELD_NAME]);

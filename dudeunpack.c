@@ -70,10 +70,11 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* extract the archive contained in the package */
-	if (RESULT_OK != archive_extract(contents + sizeof(package_header_t),
-	                                 (size_t) attributes.st_size - sizeof(package_header_t),
-	                                 _print_path,
-	                                 NULL)) {
+	if (RESULT_OK != archive_extract(
+		                 contents + sizeof(package_header_t),
+	                     (size_t) attributes.st_size - sizeof(package_header_t),
+	                     _print_path,
+	                     NULL)) {
 		goto free_contents;
 	}
 

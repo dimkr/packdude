@@ -25,11 +25,11 @@ int main(int argc, char *argv[]) {
 	/* a command-line option */
 	int option = 0;
 
-	/* the package installation prefix */
-	const char *prefix = DEFAULT_PREFIX;
-
 	/* the performed action */
 	bool should_remove = false;
+
+	/* the package installation prefix */
+	const char *prefix = DEFAULT_PREFIX;
 
 	/* the installed or removed package */
 	const char *package = NULL;

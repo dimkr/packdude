@@ -22,6 +22,8 @@ void package_info_free(package_info_t *info) {
 	/* a loop index */
 	int i = INSTALLATION_DATA_FIELDS_COUNT - 1;
 
+	assert(NULL != info);
+
 	for ( ; 0 <= i; --i) {
 		if (NULL != info->_fields[i]) {
 			free(info->_fields[i]);
@@ -115,6 +117,8 @@ result_t database_open_write(database_t *database,
 	bool exists = true;
 
 	assert(NULL != database);
+	assert((DATABASE_TYPE_METADATA == type) ||
+	       (DATABASE_TYPE_INSTALLATION_DATA == type));
 	assert(NULL != path);
 
 	/* check whether the database exists - if no, initialize it */
@@ -244,15 +248,15 @@ result_t database_set_installation_data(database_t *database,
 
 	/* format the query */
 	if (sizeof(query) <= snprintf(
-		     (char *) query,
-	         sizeof(query),
-	         "INSERT INTO packages VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NULL)",
-	         info->p_name,
-	         info->p_version,
-	         info->p_file_name,
-	         info->p_arch,
-	         info->p_deps,
-	         info->p_reason)) {
+	   (char *) query,
+	   sizeof(query),
+	   "INSERT INTO packages VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NULL)",
+	   info->p_name,
+	   info->p_version,
+	   info->p_file_name,
+	   info->p_arch,
+	   info->p_deps,
+	   info->p_reason)) {
 		goto end;
 	}
 
@@ -269,7 +273,8 @@ end:
 	return result;
 }
 
-result_t database_set_metadata(database_t *database, const package_info_t *info) {
+result_t database_set_metadata(database_t *database,
+                               const package_info_t *info) {
 	/* the executed query */
 	char query[MAX_SQL_QUERY_LENGTH];
 
@@ -440,10 +445,11 @@ result_t database_for_each_file(database_t *database,
 	assert(NULL != callback);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf((char *) query,
-	                              sizeof(query),
-	                              "SELECT * from files WHERE package = '%s' ORDER BY id DESC",
-	                              name)) {
+	if (sizeof(query) <= snprintf(
+		            (char *) query,
+	                sizeof(query),
+	                "SELECT * from files WHERE package = '%s' ORDER BY id DESC",
+	                name)) {
 		goto end;
 	}
 
