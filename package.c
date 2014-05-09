@@ -231,7 +231,7 @@ int _remove_file(database_t *database, int count, char **values, char **names) {
 					          "Failed to remove %s\n",
 					          values[FILE_FIELD_PATH]);
 					abort = 1;
-					break;
+					goto end;
 			}
 		}
 	} else {
@@ -240,6 +240,7 @@ int _remove_file(database_t *database, int count, char **values, char **names) {
 			          "Failed to remove %s\n",
 			          values[FILE_FIELD_PATH]);
 			abort = 1;
+			goto end;
 		}
 	}
 

@@ -392,9 +392,19 @@ result_t manager_remove(manager_t *manager, const char *name) {
 	assert(NULL != manager);
 	assert(NULL != name);
 
+	/* make sure the package is installed */
+	result = manager_is_installed(manager, name);
+	if (RESULT_YES != result) {
+		log_write(LOG_ERROR, "Cannot remove %s; it is not installed\n", name);
+		goto end;
+	}
+
 	/* make sure the package can be removed - if it's not installed, this check
 	 * will fail  */
-	if (RESULT_YES == manager_can_remove(manager, name)) {
+	if (RESULT_YES != manager_can_remove(manager, name)) {
+		log_write(LOG_ERROR,
+		          "Cannot remove %s because another package depends on it\n",
+		          name);
 		goto end;
 	}
 
@@ -412,9 +422,6 @@ end:
 }
 
 result_t manager_can_remove(manager_t *manager, const char *name) {
-	/* the package installation data */
-	package_info_t installation_data = {{0}};
-
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
 
@@ -423,24 +430,6 @@ result_t manager_can_remove(manager_t *manager, const char *name) {
 
 	log_write(LOG_DEBUG, "Checking whether %s can be removed\n", name);
 
-	/* get the package installation data */
-	result = database_get_installation_data(&manager->inst_packages,
-	                                        name,
-	                                        &installation_data);
-	if (RESULT_OK != result) {
-		goto end;
-	}
-
-	/* if the package is a dependency, it cannot be cleaned up automatically -
-	 * otherwise, the user's applications will just disappear */
-	if (0 != strcmp(installation_data.p_reason,
-	                INSTALLATION_REASON_DEPENDENCY)) {
-		log_write(LOG_DEBUG, "%s cannot be removed because it was installed " \
-		          "by the user\n", name);
-		result = RESULT_NO;
-		goto end;
-	}
-
 	/* check whether another package depends on the removed one */
 	log_write(LOG_DEBUG,
 	          "Checking whether another package depends on %s\n",
@@ -448,14 +437,17 @@ result_t manager_can_remove(manager_t *manager, const char *name) {
 	result = database_for_each_inst_package(&manager->inst_packages,
 	                                        (query_callback_t) _depends_on,
 	                                        (char *) name);
-	if (RESULT_ABORTED == result) {
-		result = RESULT_NO;
-	} else {
-		log_write(LOG_DEBUG, "%s is no longer needed\n", name);
-		result = RESULT_YES;
+	switch (result) {
+		case RESULT_ABORTED:
+			result = RESULT_NO;
+			break;
+
+		case RESULT_OK:
+			log_write(LOG_DEBUG, "%s is no longer needed\n", name);
+			result = RESULT_YES;
+			break;
 	}
 
-end:
 	return result;
 }
 
@@ -463,6 +455,12 @@ int _remove_unneeded(manager_cleanup_params_t *params,
                      int count,
                      char **values,
                      char **names) {
+	/* the package installation data */
+	package_info_t installation_data = {{0}};
+
+	/* the return value */
+	int abort = 0;
+
 	assert(NULL != params);
 	assert(NULL != params->manager);
 	assert(NULL != values[PACKAGE_FIELD_NAME]);
@@ -470,6 +468,25 @@ int _remove_unneeded(manager_cleanup_params_t *params,
 	log_write(LOG_DEBUG,
 	          "Attempting to auto-remove %s\n",
 	          values[PACKAGE_FIELD_NAME]);
+
+	/* get the package installation data */
+	if (RESULT_OK != database_get_installation_data(
+		                                        &params->manager->inst_packages,
+	                                            values[PACKAGE_FIELD_NAME],
+	                                            &installation_data)) {
+		abort = 1;
+		goto end;
+	}
+
+	/* if the package is a dependency, it cannot be cleaned up automatically -
+	 * otherwise, the user's applications will just disappear */
+	if (0 != strcmp(installation_data.p_reason,
+	                INSTALLATION_REASON_DEPENDENCY)) {
+		log_write(LOG_DEBUG,
+		          "%s cannot be removed because it was installed by the user\n",
+		          values[PACKAGE_FIELD_NAME]);
+		goto free_installation_data;
+	}
 
 	/* remove all uneeded packages */
 	if (RESULT_YES == manager_can_remove(params->manager,
@@ -480,7 +497,7 @@ int _remove_unneeded(manager_cleanup_params_t *params,
 			log_write(LOG_ERROR,
 			          "Failed to auto-remove %s\n",
 			          values[PACKAGE_FIELD_NAME]);
-			return 1;
+			abort = 1;
 		}
 	} else {
 		log_write(LOG_DEBUG,
@@ -488,7 +505,12 @@ int _remove_unneeded(manager_cleanup_params_t *params,
 		          values[PACKAGE_FIELD_NAME]);
 	}
 
-	return 0;
+free_installation_data:
+	/* free the package installation data */
+	package_info_free(&installation_data);
+
+end:
+	return abort;
 }
 
 result_t manager_cleanup(manager_t *manager) {
