@@ -10,7 +10,7 @@ unsigned char *comp_compress(const unsigned char *data,
 	assert(0 < size);
 	assert(NULL != compressed_size);
 
-	log_write(LOG_DEBUG, "Decompressing %zd bytes of data\n", size);
+	log_write(LOG_DEBUG, "Compressiong %zd bytes of data\n", size);
 	return (unsigned char *) tdefl_compress_mem_to_heap(data,
 	                                                    size,
 	                                                    compressed_size,
@@ -24,7 +24,7 @@ unsigned char *comp_decompress(const unsigned char *data,
 	assert(0 < size);
 	assert(NULL != decompressed_size);
 
-	log_write(LOG_DEBUG, "Compressing %zd bytes of data\n", size);
+	log_write(LOG_DEBUG, "Decompressing %zd bytes of data\n", size);
 	return (unsigned char *) tinfl_decompress_mem_to_heap(data,
 	                                                      size,
 	                                                      decompressed_size,

@@ -221,11 +221,17 @@ int _remove_file(database_t *database, int count, char **values, char **names) {
 	/* delete the file */
 	if (S_ISDIR(attributes.st_mode)) {
 		if (-1 == rmdir(values[FILE_FIELD_PATH])) {
-			if (ENOTEMPTY != errno) {
-				log_write(LOG_ERROR,
-				          "Failed to remove %s\n",
-				          values[FILE_FIELD_PATH]);
-				abort = 1;
+			switch (errno) {
+				case ENOTEMPTY:
+				case EROFS:
+					break;
+
+				default:
+					log_write(LOG_ERROR,
+					          "Failed to remove %s\n",
+					          values[FILE_FIELD_PATH]);
+					abort = 1;
+					break;
 			}
 		}
 	} else {

@@ -103,7 +103,7 @@ result_t archive_extract(unsigned char *contents,
 	}
 
 	/* decompress the archive */
-	log_write(LOG_DEBUG, "Decompress the package\n");
+	log_write(LOG_DEBUG, "Decompressing the package\n");
 	decompressed_archive = comp_decompress(contents, size, &decompressed_size);
 	if (NULL == decompressed_archive) {
 		log_write(LOG_ERROR, "Failed to decompress the package\n");
@@ -122,6 +122,7 @@ result_t archive_extract(unsigned char *contents,
 	if (0 != archive_read_open_memory(input,
 	                                  decompressed_archive,
 	                                  decompressed_size)) {
+		log_write(LOG_ERROR, "Failed to read the package\n");
 		goto free_decompressed_archive;
 	}
 
@@ -133,8 +134,10 @@ result_t archive_extract(unsigned char *contents,
 
 			case ARCHIVE_EOF:
 				result = RESULT_OK;
+				goto free_decompressed_archive;
 
 			default:
+				log_write(LOG_ERROR, "Failed to read an archive entry\n");
 				goto free_decompressed_archive;
 		}
 
