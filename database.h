@@ -232,6 +232,11 @@ result_t database_for_each_inst_package(database_t *database,
                                         void *arg);
 
 /*!
+ * @def database_for_each_avail_package
+ * @brief Currently, a synonym for database_for_each_inst_package. */
+#	define database_for_each_avail_package database_for_each_inst_package
+
+/*!
  * @fn result_t database_for_each_file(database_t *database,
  *                                     const char *name,
  *                                     const query_callback_t callback,

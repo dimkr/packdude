@@ -146,6 +146,18 @@ result_t manager_is_installed(manager_t *manager, const char *name);
 result_t manager_cleanup(manager_t *manager);
 
 /*!
+ * @fn result_t manager_list_inst(manager_t *manager)
+ * @brief Lists installed packages
+ * @param manager A package manager */
+result_t manager_list_inst(manager_t *manager);
+
+/*!
+ * @fn result_t manager_list_avail(manager_t *manager)
+ * @brief Lists available packages
+ * @param manager A package manager */
+result_t manager_list_avail(manager_t *manager);
+
+/*!
  * @} */
 
 #endif

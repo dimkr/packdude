@@ -541,3 +541,62 @@ result_t manager_cleanup(manager_t *manager) {
 
 	return result;
 }
+
+int _list_package(manager_t *manager,
+                  int count,
+                  char **values,
+                  char **names) {
+	assert((METADATA_FIELDS_COUNT == count) ||
+	       (INSTALLATION_DATA_FIELDS_COUNT == count));
+	assert(NULL != manager);
+	assert(NULL != values[PACKAGE_FIELD_NAME]);
+	assert(NULL != values[PACKAGE_FIELD_VERSION]);
+
+	log_write(LOG_INFO,
+	          "%s %s\n",
+	          values[PACKAGE_FIELD_NAME],
+	          values[PACKAGE_FIELD_VERSION]);
+
+	return 0;
+}
+
+int _list_avail_package(manager_t *manager,
+                       int count,
+                       char **values,
+                       char **names) {
+	assert((METADATA_FIELDS_COUNT == count) ||
+	       (INSTALLATION_DATA_FIELDS_COUNT == count));
+	assert(NULL != manager);
+	assert(NULL != values[PACKAGE_FIELD_NAME]);
+	assert(NULL != values[PACKAGE_FIELD_VERSION]);
+
+	switch (manager_is_installed(manager, values[PACKAGE_FIELD_NAME])) {
+		case RESULT_NO:
+			return _list_package(manager, count, values, names);
+
+		case RESULT_YES:
+			return 0;
+
+		default:
+			return 1;
+	}
+}
+
+result_t manager_list_inst(manager_t *manager) {
+	assert(NULL != manager);
+
+	log_write(LOG_DEBUG, "Listing installed packages");
+	return database_for_each_inst_package(&manager->inst_packages,
+	                                      (query_callback_t) _list_package,
+	                                      manager);
+}
+
+result_t manager_list_avail(manager_t *manager) {
+	assert(NULL != manager);
+
+	log_write(LOG_DEBUG, "Listing available packages");
+	return database_for_each_avail_package(
+		                                 &manager->avail_packages,
+	                                     (query_callback_t) _list_avail_package,
+	                                     manager);
+}
