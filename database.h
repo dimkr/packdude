@@ -56,6 +56,11 @@
 #	define INSTALLATION_DATA_FIELDS_COUNT (7)
 
 /*!
+ * @def PRIVATE_FIELDS_COUNT
+ * @brief The number fields used internally by the package manager */
+#	define PRIVATE_FIELDS_COUNT (1)
+
+/*!
  * @typedef database_type_t
  * @brief A database type */
 typedef unsigned int database_type_t;

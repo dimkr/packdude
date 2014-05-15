@@ -84,21 +84,18 @@ result_t _run_query(database_t *database,
 	log_write(LOG_DEBUG, "Running a SQL query: %s\n", query);
 	switch (sqlite3_exec(database->handle, query, callback, arg, &error)) {
 		case SQLITE_OK:
+			result = RESULT_OK;
 			break;
 
 		case SQLITE_ABORT:
 			log_write(LOG_DEBUG, "The SQL query has been aborted\n");
 			result = RESULT_ABORTED;
-			goto end;
+			break;
 
 		default:
 			log_write(LOG_DEBUG, "An SQLite3 error occurred: %s\n", error);
 			sqlite3_free(error);
-			goto end;
 	}
-
-	/* report success */
-	result = RESULT_OK;
 
 end:
 	return result;
@@ -161,6 +158,7 @@ void database_close(database_t *database) {
 	assert(NULL != database);
 
 	/* close the database */
+	log_write(LOG_DEBUG, "Closing %s\n", database->path);
 	(void) sqlite3_close(database->handle);
 }
 
@@ -174,7 +172,8 @@ int _copy_info(void *arg, int count, char **values, char **names) {
 	assert(NULL != values);
 	assert(NULL != names);
 
-	for ( ; count > i; ++i) {
+	/* copy all fields except those used internally */
+	for ( ; (count - PRIVATE_FIELDS_COUNT) > i; ++i) {
 		((package_info_t *) arg)->_fields[i] = strdup(values[i]);
 		if (NULL == ((package_info_t *) arg)->_fields[i]) {
 			for ( ; 0 <= i; --i) {

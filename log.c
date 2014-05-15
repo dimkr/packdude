@@ -10,6 +10,7 @@ static verbosity_level_t g_min_verbosity_level = DEFAULT_VERBOSITY_LEVEL;
 
 /* textual representations of all verbosity levels */
 static const char *g_verobosity_levels[] = {
+	"NOTHING",
 	"ERROR",
 	"WARNING",
 	"INFO",
@@ -61,6 +62,17 @@ void log_write(const verbosity_level_t level, const char *format, ...) {
 	(void) printf("[%s](%s): ",
 	              (const char *) &textual_time,
 	              g_verobosity_levels[level]);
+
+	va_start(arguments, format);
+	(void) vprintf(format, arguments);
+	va_end(arguments);
+}
+
+void log_dumpf(const char *format, ...) {
+	/* the format string arguments */
+	va_list arguments = {{0}};
+
+	assert(NULL != format);
 
 	va_start(arguments, format);
 	(void) vprintf(format, arguments);

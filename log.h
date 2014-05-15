@@ -14,10 +14,11 @@
 typedef unsigned int verbosity_level_t;
 
 enum verbosity_levels {
-	LOG_ERROR   = 0,
-	LOG_WARNING = 1,
-	LOG_INFO    = 2,
-	LOG_DEBUG   = 3
+	LOG_NOTHING = 0,
+	LOG_ERROR   = 1,
+	LOG_WARNING = 2,
+	LOG_INFO    = 3,
+	LOG_DEBUG   = 4
 };
 
 /*!
@@ -38,7 +39,7 @@ void log_set_level(const verbosity_level_t level);
 
 /*!
  * @fn void log_write(const verbosity_level_t level, const char *format, ...)
- * @brief Outputs a formatted message
+ * @brief Outputs a formatted message, with additional information
  * @param level The message verbosity level
  * @param format The message \a printf() -style format string */
 void log_write(const verbosity_level_t level, const char *format, ...);
@@ -47,6 +48,12 @@ void log_write(const verbosity_level_t level, const char *format, ...);
  * @def log_dump
  * @brief Outputs a constant message */
 #	define log_dump(x) (void) write(STDOUT_FILENO, x, sizeof(x) - sizeof(char))
+
+/*!
+ * @fn void log_dumpf(const char *format, ...)
+ * @brief Outputs a formatted message, without any additional information
+ * @param format The message \a printf() -style format string */
+void log_dumpf(const char *format, ...);
 
 /*!
  * @} */

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <assert.h>
+#include <stdbool.h>
 
 #include "log.h"
 #include "manager.h"
@@ -37,6 +38,9 @@ int main(int argc, char *argv[]) {
 	/* the performed action */
 	action_t action = ACTION_INVALID;
 
+	/* a flag which indicates whether debugging output is enabled */
+	bool debug = false;
+
 	/* the package installation prefix */
 	const char *prefix = DEFAULT_PREFIX;
 
@@ -48,7 +52,7 @@ int main(int argc, char *argv[]) {
 		option = getopt(argc, argv, "dlqi:r:p:");
 		switch (option) {
 			case 'd':
-				verbosity_level = LOG_DEBUG;
+				debug = true;
 				break;
 
 			case 'p':
@@ -67,10 +71,12 @@ int main(int argc, char *argv[]) {
 
 			case 'q':
 				action = ACTION_LIST_INST;
+				verbosity_level = LOG_NOTHING;
 				break;
 
 			case 'l':
 				action = ACTION_LIST_AVAIL;
+				verbosity_level = LOG_NOTHING;
 				break;
 
 			case (-1):
@@ -94,6 +100,9 @@ int main(int argc, char *argv[]) {
 
 done:
 	/* set the verbosity level */
+	if (true == debug) {
+		verbosity_level = LOG_DEBUG;
+	}
 	log_set_level(verbosity_level);
 
 	/* initialize the package manager */
@@ -101,7 +110,6 @@ done:
 		goto end;
 	}
 
-	/* install or remove a package */
 	switch (action) {
 		case ACTION_INSTALL:
 			if (RESULT_OK != manager_fetch(&manager,

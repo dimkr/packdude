@@ -208,22 +208,21 @@ result_t manager_fetch(manager_t *manager,
 
 	log_write(LOG_DEBUG, "%s is not installed\n", name);
 
+	/* get the package metadata */
+	result = database_get_metadata(&manager->avail_packages, name, &info);
+	if (RESULT_OK != result) {
+		log_write(LOG_ERROR,
+		          "Failed to locate %s in the package database\n",
+		          name);
+		goto end;
+	}
+
 	/* push the package to the installation stack */
 	log_write(LOG_DEBUG, "Pushing %s to the installation stack\n", name);
 	result = stack_push(&manager->inst_stack, name);
 	if (RESULT_OK != result) {
 		result = RESULT_MEM_ERROR;
 		goto free_info;
-	}
-
-	/* get the package metadata */
-	package_info_free(&info);
-	result = database_get_metadata(&manager->avail_packages, name, &info);
-	if (RESULT_OK != result) {
-		log_write(LOG_ERROR,
-		          "Failed to locate %s in the package database\n",
-		          name);
-		goto pop_from_stack;
 	}
 
 	/* make sure the package is compatible with the architecture the package
@@ -552,8 +551,7 @@ int _list_package(manager_t *manager,
 	assert(NULL != values[PACKAGE_FIELD_NAME]);
 	assert(NULL != values[PACKAGE_FIELD_VERSION]);
 
-	log_write(LOG_INFO,
-	          "%s %s\n",
+	log_dumpf("%s|%s\n",
 	          values[PACKAGE_FIELD_NAME],
 	          values[PACKAGE_FIELD_VERSION]);
 
