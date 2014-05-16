@@ -100,6 +100,7 @@ result_t manager_for_each_dependency(manager_t *manager,
 	}
 
 	/* if the package has no dependencies, do nothing */
+	assert(NULL != info.p_deps);
 	if (0 == strcmp(NO_DEPENDENCIES, info.p_deps)) {
 		goto free_metadata;
 	}
@@ -227,6 +228,7 @@ result_t manager_fetch(manager_t *manager,
 
 	/* make sure the package is compatible with the architecture the package
 	 * manager runs on */
+	assert(NULL != info.p_arch);
 	if ((0 != strcmp(ARCH, info.p_arch)) &&
 	    (0 != strcmp(ARCHITECTURE_INDEPENDENT, info.p_arch))) {
 		log_write(LOG_ERROR, "The package is incompatible with %s\n", ARCH);
@@ -243,7 +245,7 @@ result_t manager_fetch(manager_t *manager,
 		result = RESULT_CORRUPT_DATA;
 		goto pop_from_stack;
 	}
-	log_write(LOG_INFO, "Downloading %s\n", info.p_file_name);
+	log_write(LOG_INFO, "Downloading %s (%s)\n", info.p_file_name, info.p_desc);
 	result = repo_get_package(&manager->repo, &info, (const char *) &path);
 	if (RESULT_OK != result) {
 		log_write(LOG_ERROR, "Failed to fetch %s\n", name);
@@ -550,10 +552,12 @@ int _list_package(manager_t *manager,
 	assert(NULL != manager);
 	assert(NULL != values[PACKAGE_FIELD_NAME]);
 	assert(NULL != values[PACKAGE_FIELD_VERSION]);
+	assert(NULL != values[PACKAGE_FIELD_DESC]);
 
-	log_dumpf("%s|%s\n",
+	log_dumpf("%s|%s|%s\n",
 	          values[PACKAGE_FIELD_NAME],
-	          values[PACKAGE_FIELD_VERSION]);
+	          values[PACKAGE_FIELD_VERSION],
+	          values[PACKAGE_FIELD_DESC]);
 
 	return 0;
 }

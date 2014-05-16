@@ -85,9 +85,10 @@ int main(int argc, char *argv[]) {
 		/* convert the line into a metadata structure */
 		info._fields[0] = strtok_r(line, ",", &position);
 		if (NULL == info._fields[0]) {
+			log_write(LOG_ERROR, "The input file is corrupt\n");
 			goto close_output;
 		}
-		for (i = 1; (METADATA_FIELDS_COUNT - 1)> i; ++i) {
+		for (i = 1; (METADATA_FIELDS_COUNT - 1) > i; ++i) {
 			info._fields[i] = strtok_r(NULL, ",", &position);
 			if (NULL == info._fields[i]) {
 				goto close_output;
@@ -97,6 +98,7 @@ int main(int argc, char *argv[]) {
 		/* add a database row */
 		log_write(LOG_INFO, "Adding %s\n", info.p_name);
 		if (RESULT_OK != database_set_metadata(&output, &info)) {
+			log_write(LOG_ERROR, "Failed to add %s\n", info.p_name);
 			goto close_output;
 		}
 	} while (1);

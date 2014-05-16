@@ -17,6 +17,7 @@
 	"BEGIN TRANSACTION;\n" \
 	"CREATE TABLE packages (name TEXT,\n" \
 	"                       version TEXT,\n" \
+	"                       desc TEXT,\n" \
 	"                       file_name TEXT,\n" \
 	"                       arch TEXT,\n" \
 	"                       deps TEXT,\n" \
@@ -30,6 +31,7 @@
 	"BEGIN TRANSACTION;\n" \
 	"CREATE TABLE packages (name TEXT,\n" \
 	"                       version TEXT,\n" \
+	"                       desc TEXT,\n" \
 	"                       file_name TEXT,\n" \
 	"                       arch TEXT,\n" \
 	"                       deps TEXT,\n" \
@@ -48,12 +50,12 @@
 /*!
  * @def METADATA_FIELDS_COUNT
  * @brief The number of fields in a package metadata table */
-#	define METADATA_FIELDS_COUNT (6)
+#	define METADATA_FIELDS_COUNT (7)
 
 /*!
  * @def INSTALLATION_DATA_FIELDS_COUNT
  * @brief The number of fields in a package installation data table */
-#	define INSTALLATION_DATA_FIELDS_COUNT (7)
+#	define INSTALLATION_DATA_FIELDS_COUNT (8)
 
 /*!
  * @def PRIVATE_FIELDS_COUNT
@@ -73,11 +75,12 @@ enum database_types {
 enum package_fields {
 	PACKAGE_FIELD_NAME      = 0,
 	PACKAGE_FIELD_VERSION   = 1,
-	PACKAGE_FIELD_FILE_NAME = 2,
-	PACKAGE_FIELD_ARCH      = 3,
-	PACKAGE_FIELD_DEPS      = 4,
-	PACKAGE_FIELD_REASON    = 5,
-	PACKAGE_FIELD_ID        = 5,
+	PACKAGE_FIELD_DESC      = 2,
+	PACKAGE_FIELD_FILE_NAME = 3,
+	PACKAGE_FIELD_ARCH      = 4,
+	PACKAGE_FIELD_DEPS      = 5,
+	PACKAGE_FIELD_REASON    = 6,
+	PACKAGE_FIELD_ID        = 7
 };
 
 enum file_fields {
@@ -95,6 +98,7 @@ typedef struct {
 
 #	define p_name _fields[PACKAGE_FIELD_NAME]
 #	define p_version _fields[PACKAGE_FIELD_VERSION]
+#	define p_desc _fields[PACKAGE_FIELD_DESC]
 #	define p_file_name _fields[PACKAGE_FIELD_FILE_NAME]
 #	define p_arch _fields[PACKAGE_FIELD_ARCH]
 #	define p_deps _fields[PACKAGE_FIELD_DEPS]
