@@ -55,12 +55,14 @@ result_t package_open(package_t *package, const char *path) {
 		goto close_package;
 	}
 
-	/* locate the package header */
-	package->header = (package_header_t *) package->contents;
-
 	/* locate the archive and calculate its size */
-	package->archive = package->contents + sizeof(package_header_t);
+	package->archive = package->contents;
 	package->archive_size = package->size - sizeof(package_header_t);
+
+	/* locate the package header */
+	package->header = (package_header_t *) (package->contents + \
+	                                        package->size - \
+	                                        sizeof(package_header_t));
 
 	/* save the package path */
 	package->path = path;
@@ -99,13 +101,14 @@ result_t package_verify(const package_t *package) {
 
 	/* verify the package is targeted at the running package manager version */
 	if (VERSION != package->header->version) {
+		log_write(LOG_ERROR, "The package version is incompatible\n");
 		result = RESULT_INCOMPATIBLE;
 		goto end;
 	}
 
 	/* verify the package checksum */
 	if ((uLong) package->header->checksum != crc32(
-	                                            crc32(0L, NULL, 0),
+	                                            crc32(0L, Z_NULL, 0),
 	                                            package->archive,
 	                                            (uInt) package->archive_size)) {
 		log_write(LOG_ERROR,

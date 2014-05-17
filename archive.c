@@ -160,12 +160,12 @@ result_t archive_extract(unsigned char *contents,
 
 close_output:
 	/* free all memory used for output */
-	archive_write_close(output);
+	(void) archive_write_close(output);
 	archive_write_free(output);
 
 close_input:
 	/* free all memory used for reading the archive */
-	archive_read_close(input);
+	(void) archive_read_close(input);
 	archive_read_free(input);
 
 end:
