@@ -1,16 +1,14 @@
 #ifndef _PACKAGE_H_INCLUDED
 #	define _PACKAGE_H_INCLUDED
 
-#	include <sys/types.h>
 #	include <stdint.h>
 #	include <arpa/inet.h>
 
 #	include "result.h"
-#	include "database.h"
 
 /*!
  * @defgroup package Package
- * @brief Low-level package operations
+ * @brief Package format handling
  * @{ */
 
 /*!
@@ -44,14 +42,6 @@ typedef struct {
 } package_t;
 
 /*!
- * @struct file_register_params_t
- * @brief The parameters of _register_file() */
-typedef struct {
-	database_t *database; /*!< The database the file gets added to */
-	const char *package; /*!< The package associated with the file */
-} file_register_params_t;
-
-/*!
  * @fn result_t result_t package_open(package_t *package, const char *path)
  * @brief Opens a package for reading
  * @param package The package
@@ -69,25 +59,6 @@ void package_close(package_t *package);
  * @brief Verifies the integrity of a package
  * @param package The package */
 result_t package_verify(const package_t *package);
-
-/*!
- * @fn result_t package_install(const char *name,
- *                              package_t *package,
- *                              database_t *database);
- * @brief Installs a package
- * @param name The package name
- * @param package The package
- * @param database The database the package gets added to */
-result_t package_install(const char *name,
-                         package_t *package,
-                         database_t *database);
-
-/*!
- * @fn result_t package_remove(const char *name, database_t *database);
- * @brief Removes a package
- * @param name The package name
- * @param databasee The database the package gets removed from */
-result_t package_remove(const char *name, database_t *database);
 
 /*!
  * @} */

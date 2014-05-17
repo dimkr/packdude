@@ -6,6 +6,7 @@
 
 #include "log.h"
 #include "package.h"
+#include "package_ops.h"
 #include "manager.h"
 
 result_t manager_new(manager_t *manager, const char *prefix) {

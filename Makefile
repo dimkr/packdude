@@ -39,14 +39,14 @@ all: packdude dudepack dudeunpack repodude
 dudepack: dudepack.o log.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(ZLIB_LIBS)
 
-dudeunpack: dudeunpack.o package.o database.o archive.o log.o
-	$(CC) -o $@ $^ $(LDFLAGS) $(LIBARCHIVE_LIBS) $(SQLITE_LIBS) $(ZLIB_LIBS)
+dudeunpack: dudeunpack.o package.o archive.o log.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(LIBARCHIVE_LIBS) $(ZLIB_LIBS)
 
 repodude: repodude.c database.o log.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(SQLITE_LIBS)
 
 packdude: packdude.o manager.o database.o fetch.o repo.o log.o stack.o \
-          package.o archive.o
+          package_ops.o package.o archive.o
 	$(CC) -o $@ $^ $(LDFLAGS) \
 	               $(LIBCURL_LIBS) \
 	               $(LIBARCHIVE_LIBS) \
