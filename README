@@ -14,14 +14,14 @@ packdude is a lightweight, permissively-licensed package manager for Linux
 It tries to combine:
   - The speed and robustness of pacman (https://www.archlinux.org/pacman/)
   - Easy creation of repositories, as with createrepo
-    (http://createrepo.baseurl.org/)
+    (http://createrepo.baseurl.org/) and PPM (http://bkhome.org/woof/ppm.htm)
   - The "autoremove" feature of Apt (https://wiki.debian.org/Apt)
 
 Features
 ========
 
-  - Package download and installation, with recursive dependencies resolution.
-  - Package removal, with automatic cleanup of unneeded packages.
+  - Package download and installation, with recursive dependencies resolution
+  - Package removal, with automatic cleanup of unneeded packages
 
 Dependencies
 ============
@@ -31,13 +31,14 @@ packdude depends on:
   - SQLite (https://sqlite.org/)
   - libcurl (http://curl.haxx.se/)
 
-Additinally, packdude contains miniz (https://code.google.com/p/miniz/).
+Additionally, packdude contains miniz (https://code.google.com/p/miniz/).
 
 Usage
 =====
 
   - First, compile your favorite libraries and applications as usual. Put each
-    in a tar archive (https://wikipedia.org/wiki/Tar_(file_format)).
+    in a tar archive (https://wikipedia.org/wiki/Tar_(file_format)), using
+    relative paths.
   - Then, use dudepack to convert each archive into a packdude package.
   - Use repodude to generate a package metadata database.
   - Upload the packages and the database to the root directory of a web server
@@ -70,7 +71,7 @@ was conceived, none of the existing, binary packagers matched these criteria.
   What makes packdude simple?
   ---------------------------
 
-  - packdude doesn't ask any question; it does the right thing and that's it.
+  - packdude doesn't ask any questions; it does the right thing and that's it.
     Once a package is removed, all leftover dependencies are cleaned up
     automatically, including those of other packages.
   - The metadata of all packages stored in a packdude repository is contained
@@ -82,6 +83,21 @@ was conceived, none of the existing, binary packagers matched these criteria.
   - packdude ships with a tool for easy conversion of archives into packages.
     This makes it easy to integrate packdude into existing package and
     distribution building systems.
+
+  What makes packdude fast?
+  ---------------------------
+
+  - The use of a database, instead of huge text files that need to be read and
+    parsed
+  - packdude is written entirely in C, rather than using scripts for high-level
+    package management logic
+  - Efficient design - packdude doesn't try to achieve perfect parallelism, to
+    keep its code clean and maintainable. Instead, it does things in a logical
+    order: for example, it verifies the sanity of a package before it tries to
+    download and install its dependencies.
+  - The compression algorithm - its implementation is optimized for speed, not
+    size
+  - Caching
 
   How come packdude is "lightweight" when it has these dependencies?
   ------------------------------------------------------------------

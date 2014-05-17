@@ -33,8 +33,6 @@ int main(int argc, char *argv[]) {
 		goto close_package;
 	}
 
-	log_write(LOG_INFO, "ater verif\n");
-
 	/* change the working directory to the extraction destination */
 	if (-1 == chdir(argv[2])) {
 		goto close_package;
