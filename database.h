@@ -15,12 +15,12 @@
  * @brief The SQL query used to initialize a metadata database */
 #	define METADATA_DATABASE_CREATION_QUERY \
 	"BEGIN TRANSACTION;\n" \
-	"CREATE TABLE packages (name TEXT,\n" \
-	"                       version TEXT,\n" \
-	"                       desc TEXT,\n" \
-	"                       file_name TEXT,\n" \
-	"                       arch TEXT,\n" \
-	"                       deps TEXT,\n" \
+	"CREATE TABLE packages (name TEXT UNIQUE NOT NULL,\n" \
+	"                       version TEXT NOT NULL,\n" \
+	"                       desc TEXT NOT NULL,\n" \
+	"                       file_name TEXT UNIQUE NOT NULL,\n" \
+	"                       arch TEXT NOT NULL,\n" \
+	"                       deps TEXT NOT NULL,\n" \
 	"                       id INTEGER PRIMARY KEY);\n" \
 	"COMMIT;"
 
@@ -29,13 +29,13 @@
  * @brief The SQL query used to initialize a installation data database */
 #	define INSTALLATION_DATA_DATABASE_CREATION_QUERY \
 	"BEGIN TRANSACTION;\n" \
-	"CREATE TABLE packages (name TEXT,\n" \
-	"                       version TEXT,\n" \
-	"                       desc TEXT,\n" \
-	"                       file_name TEXT,\n" \
-	"                       arch TEXT,\n" \
-	"                       deps TEXT,\n" \
-	"                       reason TEXT,\n" \
+	"CREATE TABLE packages (name TEXT UNIQUE NOT NULL,\n" \
+	"                       version TEXT NOT NULL,\n" \
+	"                       desc TEXT NOT NULL,\n" \
+	"                       file_name TEXT UNIQUE NOT NULL,\n" \
+	"                       arch TEXT NOT NULL,\n" \
+	"                       deps TEXT NOT NULL,\n" \
+	"                       reason TEXT NOT NULL,\n" \
 	"                       id INTEGER PRIMARY KEY);\n" \
 	"CREATE TABLE files (package TEXT,\n" \
 	"                    path TEXT,\n" \

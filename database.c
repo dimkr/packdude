@@ -204,10 +204,10 @@ result_t database_get(database_t *database,
 
 	/* format the query */
 	if (sizeof(query) <= snprintf(
-		                       (char *) query,
-		                       sizeof(query),
-	                           "SELECT * FROM packages WHERE name = '%s'",
-	                           name)) {
+	                         (char *) query,
+	                         sizeof(query),
+	                         "SELECT * FROM packages WHERE name = '%s' LIMIT 1",
+	                         name)) {
 		goto end;
 	}
 
