@@ -3,6 +3,7 @@
 
 #	include <sys/types.h>
 #	include <stdint.h>
+#	include <arpa/inet.h>
 
 #	include "result.h"
 #	include "database.h"
@@ -13,9 +14,17 @@
  * @{ */
 
 /*!
+ * @def MAGIC
+ * @brief The package magic
+ * @see package_header_t */
+#	define MAGIC (ntohl(0x65647564))
+
+/*!
  * @struct package_header_t
- * @brief A package header */
+ * @brief A package header
+ * @see MAGIC */
 typedef struct __attribute__((packed)) {
+	uint32_t magic; /*!< A magic number */
 	uint8_t version; /*!< The package format version */
 	uint32_t checksum; /*!< A CRC32 checksum of the archive contained in the
 	                    * package */

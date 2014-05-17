@@ -78,9 +78,10 @@ was conceived, none of the existing, binary packagers matched these criteria.
     in one file, a database.
   - packdude's package format is simple - a tar archive
     (https://wikipedia.org/wiki/Tar_(file_format)) compressed using LZMA2
-    (http://tukaani.org/xz/), one byte for the package version and 4 bytes for
-    a CRC32 hash (https://wikipedia.org/wiki/Cyclic_redundancy_check) of the
-    archive. Simple, isn't it?
+    (http://tukaani.org/xz/), a four-byte magic number (0x65647564), one byte
+    for the package version and 4 bytes for a CRC32 hash
+    (https://wikipedia.org/wiki/Cyclic_redundancy_check) of the archive. Simple,
+    isn't it?
   - packdude ships with a tool for easy conversion of archives into packages.
     This makes it easy to integrate packdude into existing package and
     distribution building systems.

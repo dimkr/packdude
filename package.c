@@ -99,6 +99,13 @@ result_t package_verify(const package_t *package) {
 
 	log_write(LOG_INFO, "Verifying the integrity of %s\n", package->path);
 
+	/* verify the package is indeed a package, by checking the magic number */
+	if (MAGIC != package->header->magic) {
+		log_write(LOG_ERROR, "The package magic number is wrong\n");
+		result = RESULT_CORRUPT_DATA;
+		goto end;
+	}
+
 	/* verify the package is targeted at the running package manager version */
 	if (VERSION != package->header->version) {
 		log_write(LOG_ERROR, "The package version is incompatible\n");

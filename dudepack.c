@@ -5,6 +5,7 @@
 #include <zlib.h>
 
 #include "package.h"
+#include "log.h"
 
 #	define CHUNK_SIZE (BUFSIZ)
 
@@ -64,6 +65,7 @@ int main(int argc, char *argv[]) {
 
 write_header:
 	/* write the package header */
+	header.magic = MAGIC;
 	header.version = VERSION;
 	if (sizeof(header) != write(STDOUT_FILENO, &header, sizeof(header))) {
 		goto end;
