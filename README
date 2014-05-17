@@ -27,18 +27,18 @@ Dependencies
 ============
 
 packdude depends on:
-  - libarchive (http://libarchive.org/)
+  - libarchive (http://libarchive.org/) with XZ support (http://tukaani.org/xz/)
   - SQLite (https://sqlite.org/)
   - libcurl (http://curl.haxx.se/)
-
-Additionally, packdude contains miniz (https://code.google.com/p/miniz/).
+  - zlib (http://www.zlib.net/)
 
 Usage
 =====
 
   - First, compile your favorite libraries and applications as usual. Put each
-    in a tar archive (https://wikipedia.org/wiki/Tar_(file_format)), using
-    relative paths.
+    in a tar archive (https://wikipedia.org/wiki/Tar_(file_format)) compressed
+    using LZMA2 (http://tukaani.org/xz/). Make sure the archive uses relative
+    paths.
   - Then, use dudepack to convert each archive into a packdude package.
   - Use repodude to generate a package metadata database.
   - Upload the packages and the database to the root directory of a web server
@@ -79,7 +79,7 @@ was conceived, none of the existing, binary packagers matched these criteria.
   - packdude's package format is simple - one byte for the version, 4 bytes for
     a CRC32 hash (https://wikipedia.org/wiki/Cyclic_redundancy_check) and a tar
     archive (https://wikipedia.org/wiki/Tar_(file_format)) compressed using
-    deflate (https://wikipedia.org/wiki/DEFLATE). Simple, isn't it?
+    LZMA2 (http://tukaani.org/xz/). Simple, isn't it?
   - packdude ships with a tool for easy conversion of archives into packages.
     This makes it easy to integrate packdude into existing package and
     distribution building systems.
@@ -95,8 +95,8 @@ was conceived, none of the existing, binary packagers matched these criteria.
     keep its code clean and maintainable. Instead, it does things in a logical
     order: for example, it verifies the sanity of a package before it tries to
     download and install its dependencies.
-  - The compression algorithm - its implementation is optimized for speed, not
-    size
+  - The compression algorithm - although compression consumes lots of time and
+    memory, the decompression doesn't
   - Caching
 
   How come packdude is "lightweight" when it has these dependencies?
@@ -109,8 +109,7 @@ systems. They're not very heavy, but they do introduce minor overhead.
 
 However, they can be easily replaced, since packdude's code provides just enough
 abstraction to hide the nasty details of database handling, compression, file
-download, etc' from other modules. For example, originally, packdude used zlib
-(http://zlib.net) instead of miniz.
+download, etc' from other modules.
 
   Why use a database? Real geeks use text files.
   ----------------------------------------------

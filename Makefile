@@ -19,12 +19,13 @@ CFLAGS += -std=gnu99 -Wall -pedantic \
           -DPACKAGE=\"$(PACKAGE)\" \
           -DVERSION=$(VERSION) \
           -DREPO=\"$(REPO)\" \
-          $(shell $(PKG_CONFIG) --cflags libcurl libarchive sqlite3)
+          $(shell $(PKG_CONFIG) --cflags libcurl libarchive sqlite3 zlib)
 
 INSTALL = install -v
 LIBCURL_LIBS = $(shell $(PKG_CONFIG) --libs libcurl)
 LIBARCHIVE_LIBS = $(shell $(PKG_CONFIG) --libs libarchive)
 SQLITE_LIBS = $(shell $(PKG_CONFIG) --libs sqlite3)
+ZLIB_LIBS = $(shell $(PKG_CONFIG) --libs zlib)
 
 SRCS = $(wildcard *.c)
 OBJECTS = $(SRCS:.c=.o)
@@ -32,24 +33,25 @@ HEADERS = $(wildcard *.h)
 
 all: packdude dudepack dudeunpack repodude
 
-miniz.o: miniz.c
-	$(shell $(CC) -c -o $@ $< $(CFLAGS) > /dev/null 2>&1)
-
 %.o: %.c $(HEADERS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-dudepack: dudepack.o comp.o miniz.o log.o
-	$(CC) -o $@ $^ $(LDFLAGS)
+dudepack: dudepack.o log.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(ZLIB_LIBS)
 
-dudeunpack: dudeunpack.o package.o database.o archive.o comp.o miniz.o log.o
-	$(CC) -o $@ $^ $(LDFLAGS) $(LIBARCHIVE_LIBS) $(SQLITE_LIBS)
+dudeunpack: dudeunpack.o package.o database.o archive.o log.o
+	$(CC) -o $@ $^ $(LDFLAGS) $(LIBARCHIVE_LIBS) $(SQLITE_LIBS) $(ZLIB_LIBS)
 
 repodude: repodude.c database.o log.o
 	$(CC) -o $@ $^ $(LDFLAGS) $(SQLITE_LIBS)
 
 packdude: packdude.o manager.o database.o fetch.o repo.o log.o stack.o \
-          package.o archive.o comp.o miniz.o
-	$(CC) -o $@ $^ $(LDFLAGS) $(LIBCURL_LIBS) $(LIBARCHIVE_LIBS) $(SQLITE_LIBS)
+          package.o archive.o
+	$(CC) -o $@ $^ $(LDFLAGS) \
+	               $(LIBCURL_LIBS) \
+	               $(LIBARCHIVE_LIBS) \
+	               $(SQLITE_LIBS) \
+	               $(ZLIB_LIBS)
 
 doc: $(SRCS) $(HEADERS) doxygen.conf
 	doxygen doxygen.conf

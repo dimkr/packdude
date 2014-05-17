@@ -1,7 +1,6 @@
 #include <stdlib.h>
 
 #include "log.h"
-#include "comp.h"
 #include "archive.h"
 #include "package.h"
 

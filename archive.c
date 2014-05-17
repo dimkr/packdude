@@ -7,7 +7,6 @@
 #include <archive_entry.h>
 
 #include "log.h"
-#include "comp.h"
 #include "archive.h"
 
 #define EXTRACTION_OPTIONS (ARCHIVE_EXTRACT_OWNER | \
@@ -68,12 +67,6 @@ result_t archive_extract(unsigned char *contents,
 	/* the return value */
 	result_t result = RESULT_MEM_ERROR;
 
-	/* the decompressed archive size */
-	size_t decompressed_size = 0;
-
-	/* the decompressed archive */
-	unsigned char *decompressed_archive = NULL;
-
 	/* the archive */
 	struct archive *input = NULL;
 
@@ -102,16 +95,8 @@ result_t archive_extract(unsigned char *contents,
 		goto close_input;
 	}
 
-	/* decompress the archive */
-	log_write(LOG_DEBUG, "Decompressing the package\n");
-	decompressed_archive = comp_decompress(contents, size, &decompressed_size);
-	if (NULL == decompressed_archive) {
-		log_write(LOG_ERROR, "Failed to decompress the package\n");
-		goto close_output;
-	}
-
 	/* set the reading options */
-	archive_read_support_filter_none(input);
+	archive_read_support_filter_xz(input);
 	archive_read_support_format_tar(input);
 
 	/* set the extraction options */
@@ -119,11 +104,9 @@ result_t archive_extract(unsigned char *contents,
 	archive_write_disk_set_standard_lookup(output);
 
 	/* open the archive */
-	if (0 != archive_read_open_memory(input,
-	                                  decompressed_archive,
-	                                  decompressed_size)) {
+	if (0 != archive_read_open_memory(input, contents, size)) {
 		log_write(LOG_ERROR, "Failed to read the package\n");
-		goto free_decompressed_archive;
+		goto close_output;
 	}
 
 	do {
@@ -134,11 +117,11 @@ result_t archive_extract(unsigned char *contents,
 
 			case ARCHIVE_EOF:
 				result = RESULT_OK;
-				goto free_decompressed_archive;
+				goto close_output;
 
 			default:
 				log_write(LOG_ERROR, "Failed to read an archive entry\n");
-				goto free_decompressed_archive;
+				goto close_output;
 		}
 
 		/* get the file path */
@@ -174,10 +157,6 @@ result_t archive_extract(unsigned char *contents,
 			break;
 		}
 	} while (1);
-
-free_decompressed_archive:
-	/* free the decompressed archive contents */
-	free(decompressed_archive);
 
 close_output:
 	/* free all memory used for output */

@@ -5,8 +5,9 @@
 #include <unistd.h>
 #include <sys/mman.h>
 
+#include <zlib.h>
+
 #include "log.h"
-#include "comp.h"
 #include "package.h"
 
 int main(int argc, char *argv[]) {
@@ -15,9 +16,6 @@ int main(int argc, char *argv[]) {
 
 	/* the package header */
 	package_header_t header = {0};
-
-	/* the compressed archive size */
-	size_t compressed_size = 0;
 
 	/* the exit code */
 	int exit_code = EXIT_FAILURE;
@@ -30,9 +28,6 @@ int main(int argc, char *argv[]) {
 
 	/* the archive contents */
 	unsigned char *archive = NULL;
-
-	/* the compressed archive contents */
-	unsigned char *compressed_archive = NULL;
 
 	/* make sure an archive and an output file were specified */
 	if (3 != argc) {
@@ -71,41 +66,28 @@ int main(int argc, char *argv[]) {
 		goto unmap_archive;
 	}
 
-	/* compress the archive */
-	log_write(LOG_INFO, "Compressing %s\n", argv[1]);
-	compressed_archive = comp_compress(archive,
-	                                   (size_t) attributes.st_size,
-	                                   &compressed_size);
-	if (NULL == compressed_archive) {
-		goto unmap_archive;
-	}
-
 	/* hash the archive */
 	log_write(LOG_INFO, "Calculating the checksum of %s\n", argv[1]);
-	header.checksum = (uint32_t) mz_crc32(MZ_CRC32_INIT,
-	                                      compressed_archive,
-	                                      compressed_size);
+	header.checksum = (uint32_t) crc32(crc32(0L, NULL, 0),
+	                                   archive,
+	                                   (uInt) attributes.st_size);
 
 	/* write the package header */
 	log_write(LOG_INFO, "Writing %s\n", argv[2]);
 	header.version = VERSION;
 	if (sizeof(header) != write(output, &header, sizeof(header))) {
-		goto free_compressed_contents;
+		goto unmap_archive;
 	}
 
 	/* write the archive */
-	if ((ssize_t) compressed_size != write(output,
-	                                       compressed_archive,
-	                                       compressed_size)) {
-		goto free_compressed_contents;
+	if ((ssize_t) attributes.st_size != write(output,
+	                                          archive,
+	                                          (size_t) attributes.st_size)) {
+		goto unmap_archive;
 	}
 
 	/* report success */
 	exit_code = EXIT_SUCCESS;
-
-free_compressed_contents:
-	/* free the compressed archive contents */
-	free(compressed_archive);
 
 unmap_archive:
 	/* unmap the archive contents */

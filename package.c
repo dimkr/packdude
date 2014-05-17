@@ -7,8 +7,7 @@
 #include <errno.h>
 #include <sys/mman.h>
 
-#define MINIZ_HEADER_FILE_ONLY
-#include "miniz.c"
+#include <zlib.h>
 
 #include "log.h"
 #include "archive.h"
@@ -105,10 +104,10 @@ result_t package_verify(const package_t *package) {
 	}
 
 	/* verify the package checksum */
-	if ((mz_ulong) package->header->checksum != mz_crc32(
-	                                                   MZ_CRC32_INIT,
-	                                                   package->archive,
-	                                                   package->archive_size)) {
+	if ((uLong) package->header->checksum != crc32(
+	                                            crc32(0L, NULL, 0),
+	                                            package->archive,
+	                                            (uInt) package->archive_size)) {
 		log_write(LOG_ERROR,
 		          "%s is corrupt; the checksum is incorrect\n",
 		          package->path);
