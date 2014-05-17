@@ -149,7 +149,10 @@ result_t archive_extract(unsigned char *contents,
 		}
 
 		/* make sure all paths begin with "./" */
-		assert(0 == strncmp("./", path, 2));
+		if (0 != strncmp("./", path, 2)) {
+			result = RESULT_CORRUPT_DATA;
+			break;
+		}
 
 		/* ignore the root directory */
 		if (0 == strcmp("./", path)) {

@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/mman.h>
 
 #define MINIZ_HEADER_FILE_ONLY
 #include "miniz.c"
@@ -13,120 +14,110 @@
 #include "archive.h"
 #include "package.h"
 
-result_t _read_package(const char *path,
-                       unsigned char **contents,
-                       size_t *size) {
+result_t package_open(package_t *package, const char *path) {
 	/* the package attributes */
 	struct stat attributes = {0};
-
-	/* the package file descriptor */
-	int fd = (-1);
 
 	/* the return value */
 	result_t result = RESULT_IO_ERROR;
 
+	assert(NULL != package);
 	assert(NULL != path);
-	assert(NULL != contents);
-	assert(NULL != size);
+
+	log_write(LOG_DEBUG, "Opening %s\n", path);
 
 	/* get the package size */
 	if (-1 == stat(path, &attributes)) {
 		goto end;
 	}
-	*size = (size_t) attributes.st_size;
+	package->size = (size_t) attributes.st_size;
 
 	/* make sure the package size is at bigger than the header size */
-	if (sizeof(package_header_t) >= *size) {
+	if (sizeof(package_header_t) >= package->size) {
 		log_write(LOG_ERROR, "%s is too small to be a valid package\n", path);
 		result = RESULT_CORRUPT_DATA;
 		goto end;
 	}
 
 	/* open the package */
-	fd = open(path, O_RDONLY);
-	if (-1 == fd) {
+	package->fd = open(path, O_RDONLY);
+	if (-1 == package->fd) {
 		goto end;
 	}
 
-	/* allocate memory for the package contents */
-	*contents = malloc(*size);
-	if (NULL == *contents) {
-		result = RESULT_MEM_ERROR;
+	/* map the archive contents to memory */
+	package->contents = mmap(NULL,
+	                         package->size,
+	                         PROT_READ,
+	                         MAP_PRIVATE,
+	                         package->fd,
+	                         0);
+	if (NULL == package->contents) {
 		goto close_package;
 	}
 
-	/* read the package contents */
-	if ((ssize_t) *size != read(fd, *contents, *size)) {
-		goto free_contents;
-	}
+	/* locate the package header */
+	package->header = (package_header_t *) package->contents;
+
+	/* locate the archive and calculate its size */
+	package->archive = package->contents + sizeof(package_header_t);
+	package->archive_size = package->size - sizeof(package_header_t);
+
+	/* save the package path */
+	package->path = path;
 
 	/* report success */
 	result = RESULT_OK;
-	goto close_package;
-
-free_contents:
-	/* free the package contents */
-	free(contents);
+	goto end;
 
 close_package:
 	/* close the package */
-	(void) close(fd);
+	(void) close(package->fd);
 
 end:
 	return result;
 }
 
-result_t package_verify(const char *path) {
-	/* the package size */
-	size_t size = 0;
+void package_close(package_t *package) {
+	assert(NULL != package);
+	assert(NULL != package->contents);
 
+	/* free the package contents */
+	log_write(LOG_DEBUG, "Closing %s\n", package->path);
+	(void) munmap(package->contents, package->size);
+
+	/* close the package */
+	(void) close(package->fd);
+}
+
+result_t package_verify(const package_t *package) {
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
 
-	/* the package contents */
-	unsigned char *contents = NULL;
+	assert(NULL != package);
 
-	/* the archive contained in the package */
-	unsigned char *archive = NULL;
+	log_write(LOG_INFO, "Verifying the integrity of %s\n", package->path);
 
-	assert(NULL != path);
-
-	log_write(LOG_INFO, "Verifying the integrity of %s\n", path);
-
-	/* read the package */
-	result = _read_package(path, &contents, &size);
-	if (RESULT_OK != result) {
+	/* verify the package is targeted at the running package manager version */
+	if (VERSION != package->header->version) {
+		result = RESULT_INCOMPATIBLE;
 		goto end;
 	}
 
-	/* locate the archive and calculate its size */
-	archive = contents + sizeof(package_header_t);
-	size -= sizeof(package_header_t);
-
-	/* verify the package is targeted at the running package manager version */
-	if (VERSION != ((package_header_t *) contents)->version) {
-		result = RESULT_INCOMPATIBLE;
-		goto free_contents;
-	}
-
 	/* verify the package checksum */
-	if ((mz_ulong) (((package_header_t *) contents)->checksum) != mz_crc32(
-	                                                              MZ_CRC32_INIT,
-	                                                              archive,
-	                                                              size)) {
+	if ((mz_ulong) package->header->checksum != mz_crc32(
+	                                                   MZ_CRC32_INIT,
+	                                                   package->archive,
+	                                                   package->archive_size)) {
 		log_write(LOG_ERROR,
 		          "%s is corrupt; the checksum is incorrect\n",
-		          path);
+		          package->path);
 		result = RESULT_CORRUPT_DATA;
-		goto free_contents;
+		goto end;
 	}
 
 	/* report success */
 	result = RESULT_OK;
-
-free_contents:
-	/* free the package contents */
-	free(contents);
 
 end:
 	return result;
@@ -143,59 +134,24 @@ result_t _register_file(const char *path, file_register_params_t *params) {
 }
 
 result_t package_install(const char *name,
-                         const char *path,
+                         package_t *package,
                          database_t *database) {
 	/* the callback parameters */
 	file_register_params_t params = {0};
 
-	/* the package size */
-	size_t size = 0;
-
-	/* the return value */
-	result_t result = RESULT_CORRUPT_DATA;
-
-	/* the package contents */
-	unsigned char *contents = NULL;
-
-	/* the archive contained in the package */
-	unsigned char *archive = NULL;
-
 	assert(NULL != name);
-	assert(NULL != path);
+	assert(NULL != package);
 	assert(NULL != database);
 
 	log_write(LOG_INFO, "Unpacking %s\n", name);
 
-	/* read the package */
-	result = _read_package(path, &contents, &size);
-	if (RESULT_OK != result) {
-		goto end;
-	}
-
-	/* locate the archive and calculate its size */
-	archive = contents + sizeof(package_header_t);
-	size -= sizeof(package_header_t);
-
 	/* extract the archive */
 	params.package = name;
 	params.database = database;
-	result = archive_extract(archive,
-	                         size,
-	                         (file_callback_t) _register_file,
-	                         &params);
-	if (RESULT_OK != result) {
-		goto free_contents;
-	}
-
-	/* report success */
-	result = RESULT_OK;
-
-free_contents:
-	/* free the package contents */
-	free(contents);
-
-end:
-	return result;
+	return archive_extract(package->archive,
+	                       package->archive_size,
+	                       (file_callback_t) _register_file,
+	                       &params);
 }
 
 int _remove_file(database_t *database, int count, char **values, char **names) {

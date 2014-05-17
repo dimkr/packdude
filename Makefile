@@ -13,6 +13,7 @@ REPO ?= http://repo.dimakrasner.com:1024
 PACKAGE = packdude
 VERSION = 1
 CFLAGS += -std=gnu99 -Wall -pedantic \
+          -DNDEBUG \
           -DVAR_DIR=\"$(VAR_DIR)\" \
           -DARCH=\"$(ARCH)\" \
           -DPACKAGE=\"$(PACKAGE)\" \

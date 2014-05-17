@@ -5,17 +5,31 @@
 #include "log.h"
 #include "fetch.h"
 
+/* the number of fetchers */
+unsigned int g_fetcher_count = 0;
+
 result_t fetcher_new(fetcher_t *fetcher) {
 	/* the return value */
 	result_t result = RESULT_MEM_ERROR;
 
 	assert(NULL != fetcher);
 
+	/* if this is the first fetcher, initialize libcurl */
+	if (0 == g_fetcher_count) {
+		if (0 != curl_global_init(CURL_GLOBAL_NOTHING)) {
+			goto end;
+		}
+	}
+
 	/* initialize an "easy" libcurl session */
 	fetcher->handle = curl_easy_init();
 	if (NULL == fetcher->handle) {
+		curl_global_cleanup();
 		goto end;
 	}
+
+	/* increment the fetcher counter */
+	++g_fetcher_count;
 
 	/* report success */
 	result = RESULT_OK;
@@ -39,6 +53,7 @@ result_t fetcher_fetch_to_file(fetcher_t *fetcher,
 	result_t result = RESULT_MEM_ERROR;
 
 	assert(NULL != fetcher);
+	assert(NULL != fetcher->handle);
 	assert(NULL != url);
 	assert(NULL != destination);
 
@@ -131,6 +146,7 @@ result_t fetcher_fetch_to_memory(fetcher_t *fetcher,
 	result_t result = RESULT_MEM_ERROR;
 
 	assert(NULL != fetcher);
+	assert(NULL != fetcher->handle);
 	assert(NULL != url);
 	assert(NULL != buffer);
 
@@ -171,7 +187,17 @@ end:
 
 void fetcher_free(fetcher_t *fetcher) {
 	assert(NULL != fetcher);
+	assert(NULL != fetcher->handle);
+	assert(0 < g_fetcher_count);
 
 	/* end the libcurl session */
 	curl_easy_cleanup(fetcher->handle);
+
+	/* decrement the fetcher count */
+	--g_fetcher_count;
+
+	/* if this is the last fetcher, free all memory used by libcurl globally */
+	if (0 == g_fetcher_count) {
+		curl_global_cleanup();
+	}
 }

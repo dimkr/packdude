@@ -3,6 +3,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/mman.h>
 
 #include "log.h"
 #include "comp.h"
@@ -52,24 +53,22 @@ int main(int argc, char *argv[]) {
 		goto end;
 	}
 
-	/* allocate memory for the archive contents */
-	archive = malloc((size_t) attributes.st_size);
+	/* map the archive contents to memory */
+	archive = mmap(NULL,
+	               (size_t) attributes.st_size,
+	               PROT_READ,
+	               MAP_PRIVATE,
+	               fd,
+	               0);
 	if (NULL == archive) {
 		goto close_archive;
-	}
-
-	/* read the archive contents */
-	if ((ssize_t) attributes.st_size != read(fd,
-	                                         archive,
-	                                         (size_t) attributes.st_size)) {
-		goto free_contents;
 	}
 
 	/* open the output file */
 	log_write(LOG_INFO, "Creating %s\n", argv[2]);
 	output = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	if (-1 == output) {
-		goto free_compressed_contents;
+		goto unmap_archive;
 	}
 
 	/* compress the archive */
@@ -78,7 +77,7 @@ int main(int argc, char *argv[]) {
 	                                   (size_t) attributes.st_size,
 	                                   &compressed_size);
 	if (NULL == compressed_archive) {
-		goto free_contents;
+		goto unmap_archive;
 	}
 
 	/* hash the archive */
@@ -95,9 +94,9 @@ int main(int argc, char *argv[]) {
 	}
 
 	/* write the archive */
-	if ((ssize_t) attributes.st_size != write(output,
-	                                          compressed_archive,
-	                                          compressed_size)) {
+	if ((ssize_t) compressed_size != write(output,
+	                                       compressed_archive,
+	                                       compressed_size)) {
 		goto free_compressed_contents;
 	}
 
@@ -108,9 +107,9 @@ free_compressed_contents:
 	/* free the compressed archive contents */
 	free(compressed_archive);
 
-free_contents:
-	/* free the archive contents */
-	free(archive);
+unmap_archive:
+	/* unmap the archive contents */
+	(void) munmap(archive, (size_t) attributes.st_size);
 
 close_archive:
 	/* close the archive */

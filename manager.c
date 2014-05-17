@@ -66,11 +66,14 @@ end:
 void manager_free(manager_t *manager) {
 	assert(NULL != manager);
 
-	/* close the database */
+	/* close the metadata database */
 	database_close(&manager->avail_packages);
 
 	/* close the repository */
 	repo_close(&manager->repo);
+
+	/* close the installation data database */
+	database_close(&manager->inst_packages);
 }
 
 result_t manager_for_each_dependency(manager_t *manager,
@@ -170,6 +173,9 @@ result_t manager_fetch(manager_t *manager,
 	/* the package path */
 	char path[PATH_MAX] = {'\0'};
 
+	/* the package */
+	package_t package = {0};
+
 	/* the package information */
 	package_info_t info = {{0}};
 
@@ -252,17 +258,23 @@ result_t manager_fetch(manager_t *manager,
 		goto pop_from_stack;
 	}
 
-	/* verify the package integrity */
-	result = package_verify((const char *) &path);
+	/* open the package */
+	result = package_open(&package, (const char *) &path);
 	if (RESULT_OK != result) {
 		goto pop_from_stack;
+	}
+
+	/* verify the package integrity */
+	result = package_verify(&package);
+	if (RESULT_OK != result) {
+		goto close_package;
 	}
 
 	/* set the package installation reason */
 	info.p_reason = strdup(reason);
 	if (NULL == info.p_reason) {
 		result = RESULT_MEM_ERROR;
-		goto pop_from_stack;
+		goto close_package;
 	}
 
 	/* install the package dependencies */
@@ -272,27 +284,29 @@ result_t manager_fetch(manager_t *manager,
 	                                     _install_dependency,
 	                                     manager);
 	if (RESULT_OK != result) {
-		goto pop_from_stack;
+		goto close_package;
 	}
 
 	/* install the package itself */
-	result = package_install(name,
-	                         (const char *) &path,
-	                         &manager->inst_packages);
+	result = package_install(name, &package, &manager->inst_packages);
 	if (RESULT_OK != result) {
-		goto pop_from_stack;
+		goto close_package;
 	}
 
 	/* register the package */
 	log_write(LOG_INFO, "Registering %s\n", name);
 	result = database_set_installation_data(&manager->inst_packages, &info);
 	if (RESULT_OK != result) {
-		goto pop_from_stack;
+		goto close_package;
 	}
 
 	/* report success */
 	log_write(LOG_INFO, "Sucessfully installed %s\n", name);
 	result = RESULT_OK;
+
+close_package:
+	/* close the package */
+	package_close(&package);
 
 pop_from_stack:
 	/* pop the package from the installation stack */

@@ -32,7 +32,7 @@ void repo_close(repo_t *repo) {
 	assert(NULL != repo);
 
 	/* free the fetcher */
-	log_write(LOG_DEBUG, "Closing %s\n", repo->url);
+	log_write(LOG_DEBUG, "Disconnecting from %s\n", repo->url);
 	fetcher_free(&repo->fetcher);
 }
 

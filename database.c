@@ -93,11 +93,14 @@ result_t _run_query(database_t *database,
 			break;
 
 		default:
+			assert(NULL != error);
 			log_write(LOG_DEBUG, "An SQLite3 error occurred: %s\n", error);
-			sqlite3_free(error);
 	}
 
-end:
+	if (NULL != error) {
+		sqlite3_free(error);
+	}
+
 	return result;
 }
 
