@@ -1,5 +1,10 @@
 #include <stdlib.h>
 #include <assert.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <errno.h>
 
 #include "log.h"
 #include "repo.h"
@@ -84,11 +89,27 @@ end:
 }
 
 result_t repo_get_database(repo_t *repo, database_t *database) {
+	/* the database attributes */
+	struct stat attributes = {0};
+
 	/* the return value */
-	result_t result = RESULT_DATABASE_ERROR;
+	result_t result = RESULT_IO_ERROR;
 
 	assert(NULL != repo);
 	assert(NULL != database);
+
+	/* get the database attributes */
+	if (-1 == stat(METADATA_DATABASE_PATH, &attributes)) {
+		if (ENOENT != errno) {
+			goto end;
+		}
+	} else {
+		/* if the database exists and not too old, do not fetch it again */
+		if (MAX_METADATA_CACHE_AGE > (time(NULL) - attributes.st_mtim.tv_sec)) {
+			log_write(LOG_DEBUG, "Using the package database cache\n");
+			goto open_database;
+		}
+	}
 
 	/* fetch the database */
 	log_write(LOG_INFO, "Fetching the package database from %s\n", repo->url);
@@ -97,9 +118,11 @@ result_t repo_get_database(repo_t *repo, database_t *database) {
 		goto end;
 	}
 
+open_database:
 	/* open it */
 	result = database_open_read(database, METADATA_DATABASE_PATH);
 	if (RESULT_OK != result) {
+		result = RESULT_DATABASE_ERROR;
 		goto end;
 	}
 

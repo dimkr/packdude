@@ -23,6 +23,12 @@
 #	define METADATA_DATABASE_PATH "."VAR_DIR"/packdude/"REPO_DATABASE_FILE_NAME
 
 /*!
+ * @def MAX_METADATA_CACHE_AGE
+ * @brief The maximum age of the repository metadata database cache, in
+ *        seconds */
+#	define MAX_METADATA_CACHE_AGE (3600)
+
+/*!
  * @struct repo_t
  * @brief A repository */
 typedef struct {

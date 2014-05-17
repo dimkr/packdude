@@ -24,8 +24,19 @@ result_t fetcher_new(fetcher_t *fetcher) {
 	/* initialize an "easy" libcurl session */
 	fetcher->handle = curl_easy_init();
 	if (NULL == fetcher->handle) {
-		curl_global_cleanup();
-		goto end;
+		goto cleanup;
+	}
+
+	/* set common options */
+	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
+	                                 CURLOPT_USERAGENT,
+	                                 FETCHER_USER_AGENT)) {
+		goto cleanup;
+	}
+	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
+	                                 CURLOPT_TCP_NODELAY,
+	                                 1)) {
+		goto cleanup;
 	}
 
 	/* increment the fetcher counter */
@@ -33,6 +44,11 @@ result_t fetcher_new(fetcher_t *fetcher) {
 
 	/* report success */
 	result = RESULT_OK;
+	goto end;
+
+cleanup:
+	/* free memory used by libcurl */
+	curl_global_cleanup();
 
 end:
 	return result;
@@ -71,11 +87,6 @@ result_t fetcher_fetch_to_file(fetcher_t *fetcher,
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
 	                                 CURLOPT_WRITEDATA,
 	                                 destination)) {
-		goto end;
-	}
-	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
-	                                 CURLOPT_USERAGENT,
-	                                 FETCHER_USER_AGENT)) {
 		goto end;
 	}
 
@@ -162,11 +173,6 @@ result_t fetcher_fetch_to_memory(fetcher_t *fetcher,
 	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
 	                                 CURLOPT_WRITEDATA,
 	                                 buffer)) {
-		goto end;
-	}
-	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
-	                                 CURLOPT_USERAGENT,
-	                                 FETCHER_USER_AGENT)) {
 		goto end;
 	}
 
