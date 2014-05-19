@@ -17,8 +17,8 @@ enum actions {
 	ACTION_INVALID    = 4
 };
 
-void _show_help() {
-	log_dump("Usage: packdude [-d] [-p PREFIX] -l|-q|-i|-r PACKAGE\n");
+__attribute__((noreturn)) void _show_help() {
+	log_dump("Usage: packdude [-d] [-p PREFIX] -u URL -l|-q|-i|-r PACKAGE\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -47,9 +47,12 @@ int main(int argc, char *argv[]) {
 	/* the installed or removed package */
 	const char *package = NULL;
 
+	/* the repository URL */
+	const char *url = NULL;
+
 	/* parse the command-line */
 	do {
-		option = getopt(argc, argv, "dlqi:r:p:");
+		option = getopt(argc, argv, "dlqu:i:r:p:");
 		switch (option) {
 			case 'd':
 				debug = true;
@@ -79,11 +82,25 @@ int main(int argc, char *argv[]) {
 				verbosity_level = LOG_NOTHING;
 				break;
 
+			case 'u':
+				url = optarg;
+				break;
+
 			case (-1):
 				switch (action) {
-					case ACTION_INSTALL:
 					case ACTION_REMOVE:
 						if (NULL == package) {
+							_show_help();
+						}
+						break;
+
+					case ACTION_INSTALL:
+						if (NULL == package) {
+							_show_help();
+						}
+
+					case ACTION_LIST_AVAIL:
+						if (NULL == url) {
 							_show_help();
 						}
 						break;
@@ -106,7 +123,7 @@ done:
 	log_set_level(verbosity_level);
 
 	/* initialize the package manager */
-	if (RESULT_OK != manager_new(&manager, prefix)) {
+	if (RESULT_OK != manager_new(&manager, prefix, url)) {
 		goto end;
 	}
 

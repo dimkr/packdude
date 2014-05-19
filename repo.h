@@ -17,10 +17,10 @@
 #	define REPO_DATABASE_FILE_NAME "repo.sqlite3"
 
 /*!
- * @def METADATA_DATABASE_PATH
+ * @def METADATA_DATABASE_PATH_FORMAT
  * @brief The path the repository metadata database gets downloaded to
  * @see REPO_DATABASE_FILE_NAME */
-#	define METADATA_DATABASE_PATH "."VAR_DIR"/packdude/"REPO_DATABASE_FILE_NAME
+#	define METADATA_DATABASE_PATH_FORMAT "."VAR_DIR"/packdude/repo-%ld.sqlite3"
 
 /*!
  * @def MAX_METADATA_CACHE_AGE

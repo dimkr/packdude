@@ -5,6 +5,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <errno.h>
+#include <stdio.h>
+#include <string.h>
+
+#include <zlib.h>
 
 #include "log.h"
 #include "repo.h"
@@ -89,18 +93,32 @@ end:
 }
 
 result_t repo_get_database(repo_t *repo, database_t *database) {
+	/* the dayabase path */
+	char path[PATH_MAX] = {'\0'};
+
 	/* the database attributes */
 	struct stat attributes = {0};
 
 	/* the return value */
-	result_t result = RESULT_IO_ERROR;
+	result_t result = RESULT_CORRUPT_DATA;
 
 	assert(NULL != repo);
 	assert(NULL != database);
 
+	/* format the database path */
+	if (sizeof(path) <= sprintf(path,
+	                            METADATA_DATABASE_PATH_FORMAT,
+	                            crc32(
+	                              crc32(0L, Z_NULL, 0),
+	                              (const Bytef *) repo->url,
+	                              (uInt) (sizeof(char) * strlen(repo->url))))) {
+		goto end;
+	}
+
 	/* get the database attributes */
-	if (-1 == stat(METADATA_DATABASE_PATH, &attributes)) {
+	if (-1 == stat((const char *) &path, &attributes)) {
 		if (ENOENT != errno) {
+			result = RESULT_IO_ERROR;
 			goto end;
 		}
 	} else {
@@ -113,14 +131,14 @@ result_t repo_get_database(repo_t *repo, database_t *database) {
 
 	/* fetch the database */
 	log_write(LOG_INFO, "Fetching the package database from %s\n", repo->url);
-	result = _get_file(repo, REPO_DATABASE_FILE_NAME, METADATA_DATABASE_PATH);
+	result = _get_file(repo, REPO_DATABASE_FILE_NAME, (const char *) &path);
 	if (RESULT_OK != result) {
 		goto end;
 	}
 
 open_database:
 	/* open it */
-	result = database_open_read(database, METADATA_DATABASE_PATH);
+	result = database_open_read(database, (const char *) &path);
 	if (RESULT_OK != result) {
 		result = RESULT_DATABASE_ERROR;
 		goto end;

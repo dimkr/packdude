@@ -16,12 +16,16 @@ It tries to combine:
   - Easy creation of repositories, as with createrepo
     (http://createrepo.baseurl.org/) and PPM (http://bkhome.org/woof/ppm.htm)
   - The "autoremove" feature of Apt (https://wiki.debian.org/Apt)
+  - The ability to extract PPM's (http://bkhome.org/woof/ppm.htm) PET packages
+    on any distribution (using standard command-line tools), despite of their
+    custom format
 
 Features
 ========
 
   - Package download and installation, with recursive dependencies resolution
   - Package removal, with automatic cleanup of unneeded packages
+  - Support for multiple package repositories
 
 Dependencies
 ============
@@ -85,6 +89,7 @@ was conceived, none of the existing, binary packagers matched these criteria.
   - packdude ships with a tool for easy conversion of archives into packages.
     This makes it easy to integrate packdude into existing package and
     distribution building systems.
+  - packdude supports only one repository at a time.
 
   What makes packdude fast?
   ---------------------------
@@ -130,16 +135,6 @@ example, complete history of executed queries).
 Moreover, using an embedded database makes it possible to store the metadata of
 all packages of a repository in a single file that doesn't need to be parsed
 (unlike text files).
-
-  Why support only one repository?
-  --------------------------------
-
-Having only one repository makes the package manager much simpler. Separating
-packages into multiple repositories is nothing but a convenience for its
-developers.
-
-Also, that repository can be a mirror redirector, a web server that redirects
-each client to the closest mirror.
 
 Credits and Legal Information
 =============================

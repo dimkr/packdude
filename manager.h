@@ -72,13 +72,16 @@ typedef struct {
 typedef result_t (*dependency_callback_t)(const char *name, void *arg);
 
 /*!
- * @fn result_t manager_new(manager_t *manager, const char *prefix)
+ * @fn result_t manager_new(manager_t *manager,
+ *                          const char *prefix,
+ *                          const char *repo)
  * @brief Starts a package manager instance
  * @param manager A package manager
  * @param prefix The package manager operation prefix
+ * @param repo The repository URL
  * @see manager_free
  * @see DEFAULT_PREFIX */
-result_t manager_new(manager_t *manager, const char *prefix);
+result_t manager_new(manager_t *manager, const char *prefix, const char *repo);
 
 /*!
  * @fn void manager_free(manager_t *manager)

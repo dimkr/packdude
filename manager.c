@@ -9,7 +9,7 @@
 #include "package_ops.h"
 #include "manager.h"
 
-result_t manager_new(manager_t *manager, const char *prefix) {
+result_t manager_new(manager_t *manager, const char *prefix, const char *repo) {
 	/* the return value */
 	result_t result = RESULT_IO_ERROR;
 
@@ -31,18 +31,20 @@ result_t manager_new(manager_t *manager, const char *prefix) {
 		goto end;
 	}
 
-	/* open the repository */
-	result = repo_open(&manager->repo, REPO);
-	if (RESULT_OK != result) {
-		log_write(LOG_ERROR, "Failed to open the package repository\n");
-		goto close_inst;
-	}
+	/* if a repository was specified, open it */
+	if (NULL != repo) {
+		result = repo_open(&manager->repo, repo);
+		if (RESULT_OK != result) {
+			log_write(LOG_ERROR, "Failed to open the package repository\n");
+			goto close_inst;
+		}
 
-	/* fetch the repository database */
-	result = repo_get_database(&manager->repo, &manager->avail_packages);
-	if (RESULT_OK != result) {
-		log_write(LOG_ERROR, "Failed to fetch the package database\n");
-		goto close_repo;
+		/* fetch the repository database */
+		result = repo_get_database(&manager->repo, &manager->avail_packages);
+		if (RESULT_OK != result) {
+			log_write(LOG_ERROR, "Failed to fetch the package database\n");
+			goto close_repo;
+		}
 	}
 
 	/* initialize the installation stack */
@@ -67,11 +69,13 @@ end:
 void manager_free(manager_t *manager) {
 	assert(NULL != manager);
 
-	/* close the metadata database */
-	database_close(&manager->avail_packages);
+	if (NULL != manager->repo.url) {
+		/* close the metadata database */
+		database_close(&manager->avail_packages);
 
-	/* close the repository */
-	repo_close(&manager->repo);
+		/* close the repository */
+		repo_close(&manager->repo);
+	}
 
 	/* close the installation data database */
 	database_close(&manager->inst_packages);

@@ -8,7 +8,6 @@ MAN_DIR ?= /usr/share/man
 DOC_DIR ?= /usr/share/doc
 VAR_DIR ?= /var
 ARCH ?= $(shell uname -m)
-REPO ?= http://repo.dimakrasner.com:1024
 
 PACKAGE = packdude
 VERSION = 1
@@ -18,7 +17,6 @@ CFLAGS += -std=gnu99 -Wall -pedantic \
           -DARCH=\"$(ARCH)\" \
           -DPACKAGE=\"$(PACKAGE)\" \
           -DVERSION=$(VERSION) \
-          -DREPO=\"$(REPO)\" \
           $(shell $(PKG_CONFIG) --cflags libcurl libarchive sqlite3 zlib)
 
 INSTALL = install -v
