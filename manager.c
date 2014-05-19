@@ -3,6 +3,10 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 
 #include "log.h"
 #include "package.h"
@@ -22,13 +26,40 @@ result_t manager_new(manager_t *manager, const char *prefix, const char *repo) {
 		goto end;
 	}
 
+	/* open the lock file */
+	manager->lock = open(LOCK_FILE_PATH, O_WRONLY | O_CREAT, DEFFILEMODE);
+	if (-1 == manager->lock) {
+		log_write(LOG_ERROR, "Failed to open the lock file\n");
+		goto end;
+	}
+
+	/* if the lock file is locked */
+	if (-1 == lockf(manager->lock, F_TEST, 0)) {
+		switch (errno) {
+			case EAGAIN:
+			case EACCES:
+				log_write(LOG_WARNING,
+				          "Another instance is running; waiting\n");
+				break;
+
+			default:
+				goto close_lock;
+		}
+	}
+
+	/* lock the lock file */
+	if (-1 == lockf(manager->lock, F_LOCK, 0)) {
+		log_write(LOG_ERROR, "Failed to lock the lock file\n");
+		goto close_lock;
+	}
+
 	/* open the installation database */
 	result = database_open_write(&manager->inst_packages,
 	                             DATABASE_TYPE_INSTALLATION_DATA,
 	                             INSTALLATION_DATA_DATABASE_PATH);
 	if (RESULT_OK != result) {
 		log_write(LOG_ERROR, "Failed to open the package database\n");
-		goto end;
+		goto release_lock;
 	}
 
 	/* if a repository was specified, open it */
@@ -62,6 +93,14 @@ close_inst:
 	/* close the installed packages database */
 	database_close(&manager->inst_packages);
 
+release_lock:
+	/* release the lock file */
+	(void) lockf(manager->lock, F_ULOCK, 0);
+
+close_lock:
+	/* close the lock file */
+	(void) close(manager->lock);
+
 end:
 	return result;
 }
@@ -79,6 +118,12 @@ void manager_free(manager_t *manager) {
 
 	/* close the installation data database */
 	database_close(&manager->inst_packages);
+
+	/* release the lock file */
+	(void) lockf(manager->lock, F_ULOCK, 0);
+
+	/* close the lock file */
+	(void) close(manager->lock);
 }
 
 result_t manager_for_each_dependency(manager_t *manager,

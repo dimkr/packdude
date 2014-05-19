@@ -29,6 +29,11 @@
 #	define INSTALLATION_DATA_DATABASE_PATH "."VAR_DIR"/packdude/data.sqlite3"
 
 /*!
+ * @def LOCK_FILE_PATH
+ * @brief The lock file path */
+#	define LOCK_FILE_PATH "."VAR_DIR"/packdude/lock"
+
+/*!
  * @def INSTALLATION_REASON_USER
  * @brief The installation reason of packages installed by the user */
 #	define INSTALLATION_REASON_USER "user"
@@ -52,6 +57,7 @@
  * @struct manager_t
  * @brief A package manager */
 typedef struct {
+	int lock; /*!< The lock file */
 	repo_t repo; /*!< The repository */
 	database_t avail_packages; /*!< The package metadata database */
 	database_t inst_packages; /*!< The installation data database */
