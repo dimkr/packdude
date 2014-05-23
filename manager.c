@@ -126,9 +126,6 @@ void manager_free(manager_t *manager) {
 
 	/* close the lock file */
 	(void) close(manager->lock);
-
-	/* delete the lock file */
-	(void) unlink(LOCK_FILE_PATH);
 }
 
 result_t manager_for_each_dependency(manager_t *manager,
