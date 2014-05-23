@@ -31,9 +31,9 @@ void package_info_free(package_info_t *info) {
 	}
 }
 
-result_t _open_database(database_t *database,
-                        const char *path,
-                        const int flags) {
+static result_t _open_database(database_t *database,
+                               const char *path,
+                               const int flags) {
 	/* the return value */
 	result_t result = RESULT_DATABASE_ERROR;
 
@@ -66,10 +66,10 @@ result_t database_open_read(database_t *database, const char *path) {
 	return _open_database(database, path, SQLITE_OPEN_READONLY);
 }
 
-result_t _run_query(database_t *database,
-                    const char *query,
-                    const query_callback_t callback,
-                    void *arg) {
+static result_t _run_query(database_t *database,
+                           const char *query,
+                           const query_callback_t callback,
+                           void *arg) {
 	/* the return value */
 	result_t result = RESULT_DATABASE_ERROR;
 
@@ -165,7 +165,7 @@ void database_close(database_t *database) {
 	(void) sqlite3_close(database->handle);
 }
 
-int _copy_info(void *arg, int count, char **values, char **names) {
+static int _copy_info(void *arg, int count, char **values, char **names) {
 	/* a loop index */
 	int i = 0;
 

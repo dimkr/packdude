@@ -45,15 +45,11 @@ void repo_close(repo_t *repo) {
 	fetcher_free(&repo->fetcher);
 }
 
-result_t _get_file(repo_t *repo, const char *file_name, const char *path) {
+static result_t _get_file(repo_t *repo,
+                          const char *file_name,
+                          const char *path) {
 	/* the file URL */
 	char url[MAX_URL_LENGTH] = {'\0'};
-
-	/* the local file */
-	FILE *file = NULL;
-
-	/* the return value */
-	result_t result = RESULT_CORRUPT_DATA;
 
 	assert(NULL != repo);
 	assert(NULL != file_name);
@@ -65,31 +61,11 @@ result_t _get_file(repo_t *repo, const char *file_name, const char *path) {
 	                            "%s/%s",
 	                            repo->url,
 	                            file_name)) {
-		goto end;
-	}
-
-	/* open the file for writing */
-	file = fopen(path, "w");
-	if (NULL == file) {
-		result = RESULT_IO_ERROR;
-		goto end;
+		return RESULT_CORRUPT_DATA;
 	}
 
 	/* fetch the file */
-	result = fetcher_fetch_to_file(&repo->fetcher, (const char *) &url, file);
-	if (RESULT_OK != result) {
-		goto close_file;
-	}
-
-	/* report success */
-	result = RESULT_OK;
-
-close_file:
-	/* close the file */
-	(void) fclose(file);
-
-end:
-	return result;
+	return fetcher_fetch_to_file(&repo->fetcher, (const char *) &url, path);
 }
 
 result_t repo_get_database(repo_t *repo, database_t *database) {

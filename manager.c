@@ -126,6 +126,9 @@ void manager_free(manager_t *manager) {
 
 	/* close the lock file */
 	(void) close(manager->lock);
+
+	/* delete the lock file */
+	(void) unlink(LOCK_FILE_PATH);
 }
 
 result_t manager_for_each_dependency(manager_t *manager,
@@ -179,7 +182,7 @@ end:
 	return result;
 }
 
-result_t _install_dependency(const char *name, void *manager) {
+static result_t _install_dependency(const char *name, void *manager) {
 	assert(NULL != name);
 	assert(NULL != manager);
 
@@ -373,7 +376,7 @@ end:
 	return result;
 }
 
-int _depends_on(char *name, int count, char **values, char **names) {
+static int _depends_on(char *name, int count, char **values, char **names) {
 	/* the return value */
 	int abort = 0;
 
@@ -429,7 +432,7 @@ end:
 	return abort;
 }
 
-result_t _remove(manager_t *manager, const char *name) {
+static result_t _remove(manager_t *manager, const char *name) {
 	/* the return value */
 	result_t result = RESULT_OK;
 
@@ -518,10 +521,10 @@ result_t manager_can_remove(manager_t *manager, const char *name) {
 	return result;
 }
 
-int _remove_unneeded(manager_cleanup_params_t *params,
-                     int count,
-                     char **values,
-                     char **names) {
+static int _remove_unneeded(manager_cleanup_params_t *params,
+                            int count,
+                            char **values,
+                            char **names) {
 	/* the package installation data */
 	package_info_t installation_data = {{0}};
 
@@ -628,10 +631,10 @@ int _list_package(manager_t *manager,
 	return 0;
 }
 
-int _list_avail_package(manager_t *manager,
-                       int count,
-                       char **values,
-                       char **names) {
+static int _list_avail_package(manager_t *manager,
+                               int count,
+                               char **values,
+                               char **names) {
 	assert((METADATA_FIELDS_COUNT == count) ||
 	       (INSTALLATION_DATA_FIELDS_COUNT == count));
 	assert(NULL != manager);
@@ -653,7 +656,7 @@ int _list_avail_package(manager_t *manager,
 result_t manager_list_inst(manager_t *manager) {
 	assert(NULL != manager);
 
-	log_write(LOG_DEBUG, "Listing installed packages");
+	log_write(LOG_DEBUG, "Listing installed packages\n");
 	return database_for_each_inst_package(&manager->inst_packages,
 	                                      (query_callback_t) _list_package,
 	                                      manager);
@@ -662,7 +665,7 @@ result_t manager_list_inst(manager_t *manager) {
 result_t manager_list_avail(manager_t *manager) {
 	assert(NULL != manager);
 
-	log_write(LOG_DEBUG, "Listing available packages");
+	log_write(LOG_DEBUG, "Listing available packages\n");
 	return database_for_each_avail_package(
 		                                 &manager->avail_packages,
 	                                     (query_callback_t) _list_avail_package,

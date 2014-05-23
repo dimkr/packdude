@@ -17,7 +17,7 @@
                             ARCHIVE_EXTRACT_FFLAGS | \
                             ARCHIVE_EXTRACT_XATTR)
 
-result_t _extract_file(struct archive *input, struct archive *output) {
+static result_t _extract_file(struct archive *input, struct archive *output) {
 	/* the data block offset */
 	__LA_INT64_T offset = 0LL;
 

@@ -3,7 +3,7 @@
 
 #include "stack.h"
 
-node_t *_get_previous(node_t *node, node_t *end) {
+static node_t *_get_previous(node_t *node, node_t *end) {
 	node_t *last = node;
 
 	if (NULL != last) {
@@ -12,11 +12,11 @@ node_t *_get_previous(node_t *node, node_t *end) {
 	return last;
 }
 
-node_t *_get_last(node_t *node) {
+static node_t *_get_last(node_t *node) {
 	return _get_previous(node, NULL);
 }
 
-node_t *_get_before_last(node_t *node) {
+static node_t *_get_before_last(node_t *node) {
 	return _get_previous(node, _get_previous(node, NULL));
 }
 

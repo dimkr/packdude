@@ -19,7 +19,7 @@ enum actions {
 	ACTION_INVALID    = 4
 };
 
-__attribute__((noreturn)) void _show_help() {
+__attribute__((noreturn)) static void _show_help() {
 	log_dump("Usage: packdude [-d] [-p PREFIX] -u URL -l|-q|-i|-r PACKAGE\n");
 	exit(EXIT_FAILURE);
 }

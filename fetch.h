@@ -2,7 +2,6 @@
 #	define _FETCH_H_INCLUDED
 
 #	include <sys/types.h>
-#	include <stdio.h>
 
 #	include <curl/curl.h>
 
@@ -58,14 +57,14 @@ void fetcher_free(fetcher_t *fetcher);
 /*!
  * @fn result_t fetcher_fetch_to_file(fetcher_t *fetcher,
  *                                    const char *url,
- *                                    FILE *destination)
+ *                                    const char *path)
  * @brief Fetches a URL into a file
  * @param fetcher The session data
  * @param url The fetched URL
- * @param destination The output file */
+ * @param path The output file */
 result_t fetcher_fetch_to_file(fetcher_t *fetcher,
                                const char *url,
-                               FILE *destination);
+                               const char *path);
 
 /*!
  * @fn result_t fetcher_fetch_to_memory(fetcher_t *fetcher,

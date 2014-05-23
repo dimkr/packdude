@@ -4,7 +4,7 @@
 #include "archive.h"
 #include "package.h"
 
-result_t _print_path(const char *path, void *arg) {
+static result_t _print_path(const char *path, void *arg) {
 	log_write(LOG_INFO, "Extracting %s\n", path);
 	return RESULT_OK;
 }

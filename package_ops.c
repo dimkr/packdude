@@ -8,7 +8,8 @@
 #include "archive.h"
 #include "package_ops.h"
 
-result_t _register_file(const char *path, file_register_params_t *params) {
+static result_t _register_file(const char *path,
+                               file_register_params_t *params) {
 	assert(NULL != path);
 	assert(NULL != params);
 	assert(NULL != params->database);
@@ -38,7 +39,10 @@ result_t package_install(const char *name,
 	                       &params);
 }
 
-int _remove_file(database_t *database, int count, char **values, char **names) {
+static int _remove_file(database_t *database,
+                        int count,
+                        char **values,
+                        char **names) {
 	/* the file attributes */
 	struct stat attributes = {0};
 
