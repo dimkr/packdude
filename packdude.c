@@ -7,6 +7,8 @@
 #include "log.h"
 #include "manager.h"
 
+#define REPO_ENVIRONMENT_VARIABLE "REPO"
+
 typedef unsigned int action_t;
 
 enum actions {
@@ -99,9 +101,14 @@ int main(int argc, char *argv[]) {
 							_show_help();
 						}
 
+						/* fall-through */
+
 					case ACTION_LIST_AVAIL:
 						if (NULL == url) {
-							_show_help();
+							url = getenv(REPO_ENVIRONMENT_VARIABLE);
+							if (NULL == url) {
+								_show_help();
+							}
 						}
 						break;
 

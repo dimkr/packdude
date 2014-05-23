@@ -18,7 +18,7 @@ Fetch and install the specified package.
 Query the list of installed packages.
 .TP
 .B -u
-Use a given package repository.
+Use a given package repository, instead of the default.
 .TP
 .B -l
 List available packages.
@@ -28,6 +28,10 @@ Show extensive debugging information.
 .TP
 .B -p
 Instead of operating on the file system root, operate on a prefix.
+.SH "ENVIRONMENT VARIABLES"
+.TP
+.B REPO
+The default package repository.
 .SH "SEE ALSO"
 .B dudepack(1), dudeunpack(1), repodude(1)
 .SH AUTHOR
