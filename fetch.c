@@ -38,6 +38,11 @@ result_t fetcher_new(fetcher_t *fetcher) {
 	                                 1)) {
 		goto cleanup;
 	}
+	if (CURLE_OK != curl_easy_setopt(fetcher->handle,
+	                                 CURLOPT_FAILONERROR,
+	                                 1)) {
+		goto cleanup;
+	}
 
 	/* increment the fetcher counter */
 	++g_fetcher_count;
