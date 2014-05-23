@@ -48,9 +48,6 @@ static result_t _open_database(database_t *database,
 		goto end;
 	}
 
-	/* save the database path */
-	database->path = path;
-
 	/* report success */
 	result = RESULT_OK;
 
@@ -161,7 +158,6 @@ void database_close(database_t *database) {
 	assert(NULL != database);
 
 	/* close the database */
-	log_write(LOG_DEBUG, "Closing %s\n", database->path);
 	(void) sqlite3_close(database->handle);
 }
 

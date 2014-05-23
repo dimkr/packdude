@@ -110,7 +110,6 @@ typedef struct {
  * @brief A database */
 typedef struct {
 	sqlite3 *handle; /*!< A \a SQLite3 handle */
-	const char *path; /*!< The database path */
 } database_t;
 
 /*!
