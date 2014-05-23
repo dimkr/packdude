@@ -27,7 +27,9 @@ result_t manager_new(manager_t *manager, const char *prefix, const char *repo) {
 	}
 
 	/* open the lock file */
-	manager->lock = open(LOCK_FILE_PATH, O_WRONLY | O_CREAT, DEFFILEMODE);
+	manager->lock = open(LOCK_FILE_PATH,
+	                     O_WRONLY | O_CREAT,
+	                     S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
 	if (-1 == manager->lock) {
 		log_write(LOG_ERROR, "Failed to open the lock file\n");
 		goto end;
