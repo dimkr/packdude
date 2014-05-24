@@ -60,13 +60,15 @@ result_t repo_get_database(repo_t *repo, database_t *database);
 
 /*!
  * @fn result_t repo_get_package(repo_t *repo,
- *                               package_info_t *info,
- *                               const char *path)
+ *                               const package_info_t *info,
+ *                               fetcher_buffer_t *buffer)
  * @brief Fetches the a package from a repository
  * @param repo A repository
  * @param info The package metadata
- * @param path The download path */
-result_t repo_get_package(repo_t *repo, package_info_t *info, const char *path);
+ * @param buffer The output buffer */
+result_t repo_get_package(repo_t *repo,
+                          const package_info_t *info,
+                          fetcher_buffer_t *buffer);
 
 /*!
  * @} */

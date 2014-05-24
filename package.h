@@ -15,7 +15,7 @@
  * @def MAGIC
  * @brief The package magic
  * @see package_header_t */
-#	define MAGIC (ntohl(0x65647564))
+#	define MAGIC ((uint32_t) (ntohl(0x65647564)))
 
 /*!
  * @struct package_header_t
@@ -32,8 +32,6 @@ typedef struct __attribute__((packed)) {
  * @struct package_t
  * @brief A package */
 typedef struct {
-	const char *path; /*!< The package path */
-	int fd; /*!< The package file descriptor */
 	unsigned char *contents; /*!< The package contents */
 	size_t size; /*!< The package size */
 	package_header_t *header; /*!< The package header */
@@ -42,11 +40,16 @@ typedef struct {
 } package_t;
 
 /*!
- * @fn result_t result_t package_open(package_t *package, const char *path)
+ * @fn result_t package_open(package_t *package,
+ *                           unsigned char *contents,
+ *                           const size_t size)
  * @brief Opens a package for reading
  * @param package The package
- * @param path The package path */
-result_t package_open(package_t *package, const char *path);
+ * @param contents The package contents
+ * @param size The package size */
+result_t package_open(package_t *package,
+                      unsigned char *contents,
+                      const size_t size);
 
 /*!
  * @fn void package_close(package_t *package)

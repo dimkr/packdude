@@ -17,13 +17,6 @@
 #	define DEFAULT_PREFIX "/"
 
 /*!
- * @def PACKAGE_ARCHIVE_DIR
- * @brief The package archive path
- *
- * All fetched packages are stored under this directory. */
-#	define PACKAGE_ARCHIVE_DIR "."VAR_DIR"/packdude/archive"
-
-/*!
  * @def INSTALLATION_DATA_DATABASE_PATH
  * @brief The installation data database path */
 #	define INSTALLATION_DATA_DATABASE_PATH "."VAR_DIR"/packdude/data.sqlite3"

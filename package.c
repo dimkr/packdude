@@ -1,77 +1,42 @@
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
+#include <stddef.h>
 #include <assert.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 
 #include <zlib.h>
 
 #include "log.h"
 #include "package.h"
 
-result_t package_open(package_t *package, const char *path) {
-	/* the package attributes */
-	struct stat attributes = {0};
-
+result_t package_open(package_t *package,
+                      unsigned char *contents,
+                      const size_t size) {
 	/* the return value */
-	result_t result = RESULT_IO_ERROR;
+	result_t result = RESULT_CORRUPT_DATA;
 
 	assert(NULL != package);
-	assert(NULL != path);
-
-	log_write(LOG_DEBUG, "Opening %s\n", path);
-
-	/* get the package size */
-	if (-1 == stat(path, &attributes)) {
-		goto end;
-	}
-	package->size = (size_t) attributes.st_size;
+	assert(NULL != contents);
+	assert(0 < size);
 
 	/* make sure the package size is at bigger than the header size */
-	if (sizeof(package_header_t) >= package->size) {
-		log_write(LOG_ERROR, "%s is too small to be a valid package\n", path);
-		result = RESULT_CORRUPT_DATA;
+	if (sizeof(package_header_t) >= size) {
+		log_write(LOG_ERROR, "The package is too small to be valid\n");
 		goto end;
-	}
-
-	/* open the package */
-	package->fd = open(path, O_RDONLY);
-	if (-1 == package->fd) {
-		goto end;
-	}
-
-	/* map the archive contents to memory */
-	package->contents = mmap(NULL,
-	                         package->size,
-	                         PROT_READ,
-	                         MAP_PRIVATE,
-	                         package->fd,
-	                         0);
-	if (NULL == package->contents) {
-		goto close_package;
 	}
 
 	/* locate the archive and calculate its size */
-	package->archive = package->contents;
-	package->archive_size = package->size - sizeof(package_header_t);
+	package->archive = contents;
+	package->archive_size = size - sizeof(package_header_t);
 
 	/* locate the package header */
-	package->header = (package_header_t *) (package->contents + \
-	                                        package->size - \
+	package->header = (package_header_t *) (contents + \
+	                                        size - \
 	                                        sizeof(package_header_t));
 
-	/* save the package path */
-	package->path = path;
+	/* save the package contains pointer and its size */
+	package->contents = contents;
+	package->size = size;
 
 	/* report success */
 	result = RESULT_OK;
-	goto end;
-
-close_package:
-	/* close the package */
-	(void) close(package->fd);
 
 end:
 	return result;
@@ -80,13 +45,6 @@ end:
 void package_close(package_t *package) {
 	assert(NULL != package);
 	assert(NULL != package->contents);
-
-	/* free the package contents */
-	log_write(LOG_DEBUG, "Closing %s\n", package->path);
-	(void) munmap(package->contents, package->size);
-
-	/* close the package */
-	(void) close(package->fd);
 }
 
 result_t package_verify(const package_t *package) {
@@ -95,12 +53,11 @@ result_t package_verify(const package_t *package) {
 
 	assert(NULL != package);
 
-	log_write(LOG_INFO, "Verifying the integrity of %s\n", package->path);
+	log_write(LOG_INFO, "Verifying the package integrity\n");
 
 	/* verify the package is indeed a package, by checking the magic number */
 	if (MAGIC != package->header->magic) {
 		log_write(LOG_ERROR, "The package magic number is wrong\n");
-		result = RESULT_CORRUPT_DATA;
 		goto end;
 	}
 
@@ -117,8 +74,7 @@ result_t package_verify(const package_t *package) {
 	                                            package->archive,
 	                                            (uInt) package->archive_size)) {
 		log_write(LOG_ERROR,
-		          "%s is corrupt; the checksum is incorrect\n",
-		          package->path);
+		          "The package is corrupt; the checksum is incorrect\n");
 		result = RESULT_CORRUPT_DATA;
 		goto end;
 	}

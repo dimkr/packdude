@@ -222,14 +222,14 @@ result_t manager_is_installed(manager_t *manager, const char *name) {
 result_t manager_fetch(manager_t *manager,
                        const char *name,
                        const char *reason) {
-	/* the package path */
-	char path[PATH_MAX] = {'\0'};
-
 	/* the package */
 	package_t package = {0};
 
 	/* the package information */
 	package_info_t info = {{0}};
+
+	/* the package contents */
+	fetcher_buffer_t contents = {0};
 
 	/* the return value */
 	result_t result = RESULT_OK;
@@ -295,25 +295,17 @@ result_t manager_fetch(manager_t *manager,
 	}
 
 	/* fetch the package */
-	if (sizeof(path) <= snprintf((char *) &path,
-	                             sizeof(path),
-	                             "%s/%s",
-	                             PACKAGE_ARCHIVE_DIR,
-	                             info.p_file_name)) {
-		result = RESULT_CORRUPT_DATA;
-		goto pop_from_stack;
-	}
 	log_write(LOG_INFO, "Downloading %s (%s)\n", info.p_file_name, info.p_desc);
-	result = repo_get_package(&manager->repo, &info, (const char *) &path);
+	result = repo_get_package(&manager->repo, &info, &contents);
 	if (RESULT_OK != result) {
 		log_write(LOG_ERROR, "Failed to fetch %s\n", name);
 		goto pop_from_stack;
 	}
 
 	/* open the package */
-	result = package_open(&package, (const char *) &path);
+	result = package_open(&package, contents.buffer, contents.size);
 	if (RESULT_OK != result) {
-		goto pop_from_stack;
+		goto free_contents;
 	}
 
 	/* verify the package integrity */
@@ -359,6 +351,10 @@ result_t manager_fetch(manager_t *manager,
 close_package:
 	/* close the package */
 	package_close(&package);
+
+free_contents:
+	/* free the package contents */
+	free(contents.buffer);
 
 pop_from_stack:
 	/* pop the package from the installation stack */

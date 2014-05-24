@@ -45,32 +45,12 @@ void repo_close(repo_t *repo) {
 	fetcher_free(&repo->fetcher);
 }
 
-static result_t _get_file(repo_t *repo,
-                          const char *file_name,
-                          const char *path) {
-	/* the file URL */
-	char url[MAX_URL_LENGTH] = {'\0'};
-
-	assert(NULL != repo);
-	assert(NULL != file_name);
-	assert(NULL != path);
-
-	/* format the file URL */
-	if (sizeof(url) <= snprintf((char *) &url,
-	                            sizeof(url),
-	                            "%s/%s",
-	                            repo->url,
-	                            file_name)) {
-		return RESULT_CORRUPT_DATA;
-	}
-
-	/* fetch the file */
-	return fetcher_fetch_to_file(&repo->fetcher, (const char *) &url, path);
-}
-
 result_t repo_get_database(repo_t *repo, database_t *database) {
 	/* the dayabase path */
 	char path[PATH_MAX] = {'\0'};
+
+	/* the database URL */
+	char url[MAX_URL_LENGTH] = {'\0'};
 
 	/* the database attributes */
 	struct stat attributes = {0};
@@ -105,18 +85,26 @@ result_t repo_get_database(repo_t *repo, database_t *database) {
 		}
 	}
 
+	/* format the database URL */
+	if (sizeof(url) <= snprintf((char *) &url,
+	                            sizeof(url),
+	                            "%s/%s",
+	                            repo->url,
+	                            REPO_DATABASE_FILE_NAME)) {
+		goto end;
+	}
+
 	/* fetch the database */
 	log_write(LOG_INFO, "Fetching the package database from %s\n", repo->url);
-	result = _get_file(repo, REPO_DATABASE_FILE_NAME, (const char *) &path);
+	result = fetcher_fetch_to_file(&repo->fetcher, (const char *) &url, path);
 	if (RESULT_OK != result) {
 		goto end;
 	}
 
 open_database:
-	/* open it */
+	/* open the database */
 	result = database_open_read(database, (const char *) &path);
 	if (RESULT_OK != result) {
-		result = RESULT_DATABASE_ERROR;
 		goto end;
 	}
 
@@ -128,12 +116,25 @@ end:
 }
 
 result_t repo_get_package(repo_t *repo,
-                          package_info_t *info,
-                          const char *path) {
+                          const package_info_t *info,
+                          fetcher_buffer_t *buffer) {
+	/* the package URL */
+	char url[MAX_URL_LENGTH] = {'\0'};
+
 	assert(NULL != repo);
 	assert(NULL != info);
 	assert(NULL != info->p_file_name);
-	assert(NULL != path);
+	assert(NULL != buffer);
 
-	return _get_file(repo, info->p_file_name, path);
+	/* format the package URL */
+	if (sizeof(url) <= snprintf((char *) &url,
+	                            sizeof(url),
+	                            "%s/%s",
+	                            repo->url,
+	                            info->p_file_name)) {
+		return RESULT_CORRUPT_DATA;
+	}
+
+	/* fetch the package */
+	return fetcher_fetch_to_memory(&repo->fetcher, (const char *) &url, buffer);
 }

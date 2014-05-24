@@ -133,6 +133,8 @@ result_t archive_extract(unsigned char *contents,
 
 		/* make sure all paths begin with "./" */
 		if (0 != strncmp("./", path, 2)) {
+			log_write(LOG_ERROR,
+			          "The archive is corrupt; it contains absolute paths\n");
 			result = RESULT_CORRUPT_DATA;
 			break;
 		}

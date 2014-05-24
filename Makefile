@@ -59,7 +59,7 @@ install: all
 	$(INSTALL) -m 755 dudepack $(DESTDIR)/$(BIN_DIR)/dudepack
 	$(INSTALL) -m 755 dudeunpack $(DESTDIR)/$(BIN_DIR)/dudeunpack
 	$(INSTALL) -m 755 repodude $(DESTDIR)/$(BIN_DIR)/repodude
-	$(INSTALL) -D -d -m 755 $(DESTDIR)/$(VAR_DIR)/packdude/archive
+	$(INSTALL) -D -d -m 755 $(DESTDIR)/$(VAR_DIR)/packdude
 	$(INSTALL) -D -m 644 packdude.8 $(DESTDIR)/$(MAN_DIR)/man8/packdude.8
 	$(INSTALL) -D -m 644 dudepack.1 $(DESTDIR)/$(MAN_DIR)/man1/dudepack.1
 	$(INSTALL) -m 644 dudeunpack.1 $(DESTDIR)/$(MAN_DIR)/man1/dudeunpack.1
