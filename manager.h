@@ -37,6 +37,11 @@
 #	define INSTALLATION_REASON_DEPENDENCY "dependency"
 
 /*!
+ * @def INSTALLATION_REASON_CORE
+ * @brief The installation reason of core, non-removable pacakges */
+#	define INSTALLATION_REASON_CORE "core"
+
+/*!
  * @def ARCHITECTURE_INDEPENDENT
  * @brief The target architecture of architecture-independent packages */
 #	define ARCHITECTURE_INDEPENDENT "all"

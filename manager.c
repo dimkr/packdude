@@ -238,7 +238,8 @@ result_t manager_fetch(manager_t *manager,
 	assert(NULL != name);
 	assert(NULL != reason);
 	assert((0 == strcmp(INSTALLATION_REASON_USER, reason)) ||
-	       (0 == strcmp(INSTALLATION_REASON_DEPENDENCY, reason)));
+	       (0 == strcmp(INSTALLATION_REASON_DEPENDENCY, reason)) ||
+	       (0 == strcmp(INSTALLATION_REASON_CORE, reason)));
 
 	/* if the package is currently being installed, do nothing */
 	if (true == stack_contains(manager->inst_stack,
@@ -465,9 +466,7 @@ result_t manager_remove(manager_t *manager, const char *name) {
 	/* make sure the package can be removed - if it's not installed, this check
 	 * will fail  */
 	if (RESULT_YES != manager_can_remove(manager, name)) {
-		log_write(LOG_ERROR,
-		          "Cannot remove %s because another package depends on it\n",
-		          name);
+		log_write(LOG_ERROR, "%s cannot be removed\n", name);
 		goto end;
 	}
 
@@ -485,13 +484,32 @@ end:
 }
 
 result_t manager_can_remove(manager_t *manager, const char *name) {
+	/* the package installation data */
+	package_info_t installation_data = {{0}};
+
 	/* the return value */
-	result_t result = RESULT_CORRUPT_DATA;
+	result_t result = RESULT_NO;
 
 	assert(NULL != manager);
 	assert(NULL != name);
 
 	log_write(LOG_DEBUG, "Checking whether %s can be removed\n", name);
+
+	/* get the package installation data */
+	result = database_get_installation_data(&manager->inst_packages,
+	                                        name,
+	                                        &installation_data);
+	if (RESULT_OK != result) {
+		goto end;
+	}
+
+	/* do not allow core packages to be removed */
+	if (0 == strcmp(INSTALLATION_REASON_CORE, installation_data.p_reason)) {
+		log_write(LOG_DEBUG,
+		          "%s cannot be removed because it is a core package\n",
+		          name);
+		goto free_installation_data;
+	}
 
 	/* check whether another package depends on the removed one */
 	log_write(LOG_DEBUG,
@@ -502,6 +520,10 @@ result_t manager_can_remove(manager_t *manager, const char *name) {
 	                                        (char *) name);
 	switch (result) {
 		case RESULT_ABORTED:
+			log_write(
+			     LOG_DEBUG,
+			     "%s cannot be removed because another package depends on it\n",
+			     name);
 			result = RESULT_NO;
 			break;
 
@@ -511,6 +533,11 @@ result_t manager_can_remove(manager_t *manager, const char *name) {
 			break;
 	}
 
+free_installation_data:
+	/* free the package installation data */
+	package_info_free(&installation_data);
+
+end:
 	return result;
 }
 
@@ -545,9 +572,10 @@ static int _remove_unneeded(manager_cleanup_params_t *params,
 	 * otherwise, the user's applications will just disappear */
 	if (0 != strcmp(installation_data.p_reason,
 	                INSTALLATION_REASON_DEPENDENCY)) {
-		log_write(LOG_DEBUG,
-		          "%s cannot be removed because it was installed by the user\n",
-		          values[PACKAGE_FIELD_NAME]);
+		log_write(
+		  LOG_DEBUG,
+		  "%s cannot be removed because it was not installed as a dependency\n",
+		  values[PACKAGE_FIELD_NAME]);
 		goto free_installation_data;
 	}
 
@@ -675,8 +703,7 @@ static int _list_removable_package(manager_t *manager,
 	/* the return value */
 	int abort = 0;
 
-	assert(NULL != params);
-	assert(NULL != params->manager);
+	assert(NULL != manager);
 	assert(NULL != values[PACKAGE_FIELD_NAME]);
 
 	log_write(LOG_DEBUG,

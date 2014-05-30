@@ -21,7 +21,7 @@ enum actions {
 };
 
 __attribute__((noreturn)) static void _show_help() {
-	log_dump("Usage: packdude [-d] [-p PREFIX] -u URL -l|-q|-c|-i|-r PACKAGE\n");
+	log_dump("Usage: packdude [-d] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-i|-r PACKAGE\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -47,6 +47,9 @@ int main(int argc, char *argv[]) {
 	/* the package installation prefix */
 	const char *prefix = DEFAULT_PREFIX;
 
+	/* the package installation reason */
+	const char *reason = INSTALLATION_REASON_USER;
+
 	/* the installed or removed package */
 	const char *package = NULL;
 
@@ -55,7 +58,7 @@ int main(int argc, char *argv[]) {
 
 	/* parse the command-line */
 	do {
-		option = getopt(argc, argv, "dlqcu:i:r:p:");
+		option = getopt(argc, argv, "dnlqcu:i:r:p:");
 		switch (option) {
 			case 'd':
 				debug = true;
@@ -73,6 +76,10 @@ int main(int argc, char *argv[]) {
 			case 'i':
 				action = ACTION_INSTALL;
 				package = optarg;
+				break;
+
+			case 'n':
+				reason = INSTALLATION_REASON_CORE;
 				break;
 
 			case 'q':
@@ -142,9 +149,7 @@ done:
 
 	switch (action) {
 		case ACTION_INSTALL:
-			if (RESULT_OK != manager_fetch(&manager,
-			                               package,
-			                               INSTALLATION_REASON_USER)) {
+			if (RESULT_OK != manager_fetch(&manager, package, reason)) {
 				goto close_package_manager;
 			}
 			break;
