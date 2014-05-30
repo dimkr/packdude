@@ -605,10 +605,10 @@ result_t manager_cleanup(manager_t *manager) {
 	return result;
 }
 
-int _list_package(manager_t *manager,
-                  int count,
-                  char **values,
-                  char **names) {
+static int _list_package(manager_t *manager,
+                         int count,
+                         char **values,
+                         char **names) {
 	assert((METADATA_FIELDS_COUNT == count) ||
 	       (INSTALLATION_DATA_FIELDS_COUNT == count));
 	assert(NULL != manager);
@@ -622,6 +622,15 @@ int _list_package(manager_t *manager,
 	          values[PACKAGE_FIELD_DESC]);
 
 	return 0;
+}
+
+result_t manager_list_inst(manager_t *manager) {
+	assert(NULL != manager);
+
+	log_write(LOG_DEBUG, "Listing installed packages\n");
+	return database_for_each_inst_package(&manager->inst_packages,
+	                                      (query_callback_t) _list_package,
+	                                      manager);
 }
 
 static int _list_avail_package(manager_t *manager,
@@ -646,21 +655,70 @@ static int _list_avail_package(manager_t *manager,
 	}
 }
 
-result_t manager_list_inst(manager_t *manager) {
-	assert(NULL != manager);
-
-	log_write(LOG_DEBUG, "Listing installed packages\n");
-	return database_for_each_inst_package(&manager->inst_packages,
-	                                      (query_callback_t) _list_package,
-	                                      manager);
-}
-
 result_t manager_list_avail(manager_t *manager) {
 	assert(NULL != manager);
 
 	log_write(LOG_DEBUG, "Listing available packages\n");
 	return database_for_each_avail_package(
-		                                 &manager->avail_packages,
+	                                     &manager->avail_packages,
 	                                     (query_callback_t) _list_avail_package,
 	                                     manager);
+}
+
+static int _list_removable_package(manager_t *manager,
+                                   int count,
+                                   char **values,
+                                   char **names) {
+	/* the package installation data */
+	package_info_t installation_data = {{0}};
+
+	/* the return value */
+	int abort = 0;
+
+	assert(NULL != params);
+	assert(NULL != params->manager);
+	assert(NULL != values[PACKAGE_FIELD_NAME]);
+
+	log_write(LOG_DEBUG,
+	          "Checking whether %s can be removed\n",
+	          values[PACKAGE_FIELD_NAME]);
+
+	/* get the package installation data */
+	if (RESULT_OK != database_get_installation_data(&manager->inst_packages,
+	                                                values[PACKAGE_FIELD_NAME],
+	                                                &installation_data)) {
+		abort = 1;
+		goto end;
+	}
+
+	/* make sure the package was installed by the user */
+	if (0 != strcmp(installation_data.p_reason, INSTALLATION_REASON_USER)) {
+		log_write(
+		      LOG_DEBUG,
+		      "%s cannot be removed because it was not installed by the user\n",
+		      values[PACKAGE_FIELD_NAME]);
+		goto free_installation_data;
+	}
+
+	/* check whether the package is a dependency of another package */
+	if (RESULT_YES == manager_can_remove(manager, values[PACKAGE_FIELD_NAME])) {
+		abort = _list_package(manager, count, values, names);
+	}
+
+free_installation_data:
+	/* free the package installation data */
+	package_info_free(&installation_data);
+
+end:
+	return abort;
+}
+
+result_t manager_list_removable(manager_t *manager) {
+	assert(NULL != manager);
+
+	log_write(LOG_DEBUG, "Listing removable packages\n");
+	return database_for_each_inst_package(
+	                                 &manager->inst_packages,
+	                                 (query_callback_t) _list_removable_package,
+	                                 manager);
 }

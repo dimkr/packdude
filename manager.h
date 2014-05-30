@@ -160,6 +160,12 @@ result_t manager_list_inst(manager_t *manager);
 result_t manager_list_avail(manager_t *manager);
 
 /*!
+ * @fn result_t manager_list_removable(manager_t *manager)
+ * @brief Lists packages installed by the user, which can be removed
+ * @param manager A package manager */
+result_t manager_list_removable(manager_t *manager);
+
+/*!
  * @} */
 
 #endif

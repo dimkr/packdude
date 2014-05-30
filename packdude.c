@@ -12,15 +12,16 @@
 typedef unsigned int action_t;
 
 enum actions {
-	ACTION_INSTALL    = 0,
-	ACTION_REMOVE     = 1,
-	ACTION_LIST_INST  = 2,
-	ACTION_LIST_AVAIL = 3,
-	ACTION_INVALID    = 4
+	ACTION_INSTALL        = 0,
+	ACTION_REMOVE         = 1,
+	ACTION_LIST_INSTALLED = 2,
+	ACTION_LIST_AVAILABLE = 3,
+	ACTION_LIST_REMOVABLE = 4,
+	ACTION_INVALID        = 5
 };
 
 __attribute__((noreturn)) static void _show_help() {
-	log_dump("Usage: packdude [-d] [-p PREFIX] -u URL -l|-q|-i|-r PACKAGE\n");
+	log_dump("Usage: packdude [-d] [-p PREFIX] -u URL -l|-q|-c|-i|-r PACKAGE\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -54,7 +55,7 @@ int main(int argc, char *argv[]) {
 
 	/* parse the command-line */
 	do {
-		option = getopt(argc, argv, "dlqu:i:r:p:");
+		option = getopt(argc, argv, "dlqcu:i:r:p:");
 		switch (option) {
 			case 'd':
 				debug = true;
@@ -75,12 +76,17 @@ int main(int argc, char *argv[]) {
 				break;
 
 			case 'q':
-				action = ACTION_LIST_INST;
+				action = ACTION_LIST_INSTALLED;
 				verbosity_level = LOG_NOTHING;
 				break;
 
 			case 'l':
-				action = ACTION_LIST_AVAIL;
+				action = ACTION_LIST_AVAILABLE;
+				verbosity_level = LOG_NOTHING;
+				break;
+
+			case 'c':
+				action = ACTION_LIST_REMOVABLE;
 				verbosity_level = LOG_NOTHING;
 				break;
 
@@ -103,7 +109,7 @@ int main(int argc, char *argv[]) {
 
 						/* fall-through */
 
-					case ACTION_LIST_AVAIL:
+					case ACTION_LIST_AVAILABLE:
 						if (NULL == url) {
 							url = getenv(REPO_ENVIRONMENT_VARIABLE);
 							if (NULL == url) {
@@ -156,14 +162,20 @@ done:
 
 			break;
 
-		case ACTION_LIST_INST:
+		case ACTION_LIST_INSTALLED:
 			if (RESULT_OK != manager_list_inst(&manager)) {
 				goto close_package_manager;
 			}
 			break;
 
-		case ACTION_LIST_AVAIL:
+		case ACTION_LIST_AVAILABLE:
 			if (RESULT_OK != manager_list_avail(&manager)) {
+				goto close_package_manager;
+			}
+			break;
+
+		case ACTION_LIST_REMOVABLE:
+			if (RESULT_OK != manager_list_removable(&manager)) {
 				goto close_package_manager;
 			}
 			break;
