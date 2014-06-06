@@ -188,11 +188,11 @@ static int _copy_info(void *arg, int count, char **values, char **names) {
 result_t database_get(database_t *database,
                       const char *name,
                       package_info_t *info) {
-	/* the executed query */
-	char query[MAX_SQL_QUERY_LENGTH];
-
 	/* the return value */
-	result_t result = RESULT_CORRUPT_DATA;
+	result_t result = RESULT_DATABASE_ERROR;
+
+	/* the executed query */
+	char *query = NULL;
 
 	assert(NULL != database);
 	assert(NULL != database->handle);
@@ -202,11 +202,9 @@ result_t database_get(database_t *database,
 	log_write(LOG_DEBUG, "Searching the package database for %s\n", name);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf(
-	                         (char *) query,
-	                         sizeof(query),
-	                         "SELECT * FROM packages WHERE name = '%s' LIMIT 1",
-	                         name)) {
+	query = sqlite3_mprintf("SELECT * FROM packages WHERE name = '%q' LIMIT 1",
+	                        name);
+	if (NULL == query) {
 		goto end;
 	}
 
@@ -214,19 +212,23 @@ result_t database_get(database_t *database,
 	info->p_name = NULL;
 
 	/* run the query */
-	result = _run_query(database, (const char *) &query, _copy_info, info);
+	result = _run_query(database, query, _copy_info, info);
 	if (SQLITE_OK != result) {
-		goto end;
+		goto free_query;
 	}
 
 	/* if the package was not found, report failure */
 	if (NULL == info->p_name) {
 		result = RESULT_NOT_FOUND;
-		goto end;
+		goto free_query;
 	}
 
 	/* report success */
 	result = RESULT_OK;
+
+free_query:
+	/* free the query */
+	sqlite3_free(query);
 
 end:
 	return result;
@@ -234,39 +236,42 @@ end:
 
 result_t database_set_installation_data(database_t *database,
                                         const package_info_t *info) {
-	/* the executed query */
-	char query[MAX_SQL_QUERY_LENGTH];
-
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
+
+	/* the executed query */
+	char *query = NULL;
 
 	assert(NULL != database);
 	assert(NULL != database->handle);
 	assert(NULL != info);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf(
-	   (char *) query,
-	   sizeof(query),
-	   "INSERT INTO packages VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', NULL)",
-	   info->p_name,
-	   info->p_version,
-	   info->p_desc,
-	   info->p_file_name,
-	   info->p_arch,
-	   info->p_deps,
-	   info->p_reason)) {
+	query = sqlite3_mprintf("INSERT INTO packages VALUES ('%q', '%q', '%q', " \
+	                        "'%q', '%q', '%q', '%q', NULL)",
+	                        info->p_name,
+	                        info->p_version,
+	                        info->p_desc,
+	                        info->p_file_name,
+	                        info->p_arch,
+	                        info->p_deps,
+	                        info->p_reason);
+	if (NULL == query) {
 		goto end;
 	}
 
 	/* run the query */
-	result = _run_query(database, (const char *) &query, NULL, NULL);
+	result = _run_query(database, query, NULL, NULL);
 	if (SQLITE_OK != result) {
-		goto end;
+		goto free_query;
 	}
 
 	/* report success */
 	result = RESULT_OK;
+
+free_query:
+	/* free the query */
+	sqlite3_free(query);
 
 end:
 	return result;
@@ -274,38 +279,41 @@ end:
 
 result_t database_set_metadata(database_t *database,
                                const package_info_t *info) {
-	/* the executed query */
-	char query[MAX_SQL_QUERY_LENGTH];
-
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
+
+	/* the executed query */
+	char *query = NULL;
 
 	assert(NULL != database);
 	assert(NULL != database->handle);
 	assert(NULL != info);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf(
-		     (char *) query,
-	         sizeof(query),
-	         "INSERT INTO packages VALUES ('%s', '%s', '%s', '%s', '%s', '%s', NULL)",
-	         info->p_name,
-	         info->p_version,
-	         info->p_desc,
-	         info->p_file_name,
-	         info->p_arch,
-	         info->p_deps)) {
+	query = sqlite3_mprintf("INSERT INTO packages VALUES ('%q', '%q', '%q', " \
+	                        "'%q', '%q', '%q', NULL)",
+	                        info->p_name,
+	                        info->p_version,
+	                        info->p_desc,
+	                        info->p_file_name,
+	                        info->p_arch,
+	                        info->p_deps);
+	if (NULL == query) {
 		goto end;
 	}
 
 	/* run the query */
-	result = _run_query(database, (const char *) &query, NULL, NULL);
+	result = _run_query(database, query, NULL, NULL);
 	if (SQLITE_OK != result) {
-		goto end;
+		goto free_query;
 	}
 
 	/* report success */
 	result = RESULT_OK;
+
+free_query:
+	/* free the query */
+	sqlite3_free(query);
 
 end:
 	return result;
@@ -313,11 +321,11 @@ end:
 
 result_t database_remove_installation_data(database_t *database,
                                            const char *package) {
-	/* the executed query */
-	char query[MAX_SQL_QUERY_LENGTH];
-
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
+
+	/* the executed query */
+	char *query = NULL;
 
 	assert(NULL != database);
 	assert(NULL != database->handle);
@@ -326,21 +334,24 @@ result_t database_remove_installation_data(database_t *database,
 	log_write(LOG_INFO, "Unregistering %s\n", package);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf((char *) query,
-	                              sizeof(query),
-	                              "DELETE FROM packages WHERE name = '%s'",
-	                              package)) {
+	query = sqlite3_mprintf("DELETE FROM packages WHERE name = '%q'",
+	                        package);
+	if (NULL == query) {
 		goto end;
 	}
 
 	/* run the query */
-	result = _run_query(database, (const char *) &query, NULL, NULL);
+	result = _run_query(database, query, NULL, NULL);
 	if (SQLITE_OK != result) {
-		goto end;
+		goto free_query;
 	}
 
 	/* report success */
 	result = RESULT_OK;
+
+free_query:
+	/* free the query */
+	sqlite3_free(query);
 
 end:
 	return result;
@@ -349,11 +360,11 @@ end:
 result_t database_register_path(database_t *database,
                                 const char *path,
                                 const char *package) {
-	/* the executed query */
-	char query[MAX_SQL_QUERY_LENGTH];
-
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
+
+	/* the executed query */
+	char *query = NULL;
 
 	assert(NULL != database);
 	assert(NULL != database->handle);
@@ -363,33 +374,36 @@ result_t database_register_path(database_t *database,
 	log_write(LOG_DEBUG, "Registering %s (%s)\n", path, package);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf((char *) query,
-	                              sizeof(query),
-	                              "INSERT INTO files VALUES ('%s', '%s', NULL)",
-	                              package,
-	                              path)) {
+	query = sqlite3_mprintf("INSERT INTO files VALUES ('%q', '%q', NULL)",
+	                        package,
+	                        path);
+	if (NULL == query) {
 		goto end;
 	}
 
 	/* run the query */
-	result = _run_query(database, (const char *) &query, NULL, NULL);
+	result = _run_query(database, query, NULL, NULL);
 	if (SQLITE_OK != result) {
-		goto end;
+		goto free_query;
 	}
 
 	/* report success */
 	result = RESULT_OK;
+
+free_query:
+	/* free the query */
+	sqlite3_free(query);
 
 end:
 	return result;
 }
 
 result_t database_unregister_path(database_t *database, const char *path) {
-	/* the executed query */
-	char query[MAX_SQL_QUERY_LENGTH];
-
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
+
+	/* the executed query */
+	char *query = NULL;
 
 	assert(NULL != database);
 	assert(NULL != database->handle);
@@ -398,21 +412,23 @@ result_t database_unregister_path(database_t *database, const char *path) {
 	log_write(LOG_DEBUG, "Unregistering %s\n", path);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf((char *) query,
-	                              sizeof(query),
-	                              "DELETE FROM files WHERE path = '%s'",
-	                              path)) {
+	query = sqlite3_mprintf("DELETE FROM files WHERE path = '%q'", path);
+	if (NULL == query) {
 		goto end;
 	}
 
 	/* run the query */
-	result = _run_query(database, (const char *) &query, NULL, NULL);
+	result = _run_query(database, query, NULL, NULL);
 	if (SQLITE_OK != result) {
-		goto end;
+		goto free_query;
 	}
 
 	/* report success */
 	result = RESULT_OK;
+
+free_query:
+	/* free the query */
+	sqlite3_free(query);
 
 end:
 	return result;
@@ -433,11 +449,11 @@ result_t database_for_each_file(database_t *database,
                                 const char *name,
                                 const query_callback_t callback,
                                 void *arg) {
-	/* the executed query */
-	char query[MAX_SQL_QUERY_LENGTH];
-
 	/* the return value */
 	result_t result = RESULT_CORRUPT_DATA;
+
+	/* the executed query */
+	char *query = NULL;
 
 	assert(NULL != database);
 	assert(NULL != database->handle);
@@ -445,22 +461,25 @@ result_t database_for_each_file(database_t *database,
 	assert(NULL != callback);
 
 	/* format the query */
-	if (sizeof(query) <= snprintf(
-		            (char *) query,
-	                sizeof(query),
-	                "SELECT * from files WHERE package = '%s' ORDER BY id DESC",
-	                name)) {
+	query = sqlite3_mprintf(
+	                "SELECT * from files WHERE package = '%q' ORDER BY id DESC",
+	                name);
+	if (NULL == query) {
 		goto end;
 	}
 
 	/* run the query */
-	result = _run_query(database, (const char *) &query, callback, arg);
+	result = _run_query(database, query, callback, arg);
 	if (SQLITE_OK != result) {
-		goto end;
+		goto free_query;
 	}
 
 	/* report success */
 	result = RESULT_OK;
+
+free_query:
+	/* free the query */
+	sqlite3_free(query);
 
 end:
 	return result;
