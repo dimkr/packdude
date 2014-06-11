@@ -171,6 +171,13 @@ result_t manager_list_avail(manager_t *manager);
 result_t manager_list_removable(manager_t *manager);
 
 /*!
+ * @fn result_t manager_list_files(manager_t *manager, const char *name)
+ * @brief Lists all files installed by a package
+ * @param manager A package manager
+ * @param name The package name */
+result_t manager_list_files(manager_t *manager, const char *name);
+
+/*!
  * @} */
 
 #endif

@@ -58,6 +58,11 @@
 #	define INSTALLATION_DATA_FIELDS_COUNT (8)
 
 /*!
+ * @def FILE_FIELDS_COUNT
+ * @brief The number of fields in the installed files table */
+#	define FILE_FIELDS_COUNT (3)
+
+/*!
  * @def PRIVATE_FIELDS_COUNT
  * @brief The number fields used internally by the package manager */
 #	define PRIVATE_FIELDS_COUNT (1)

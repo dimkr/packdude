@@ -749,3 +749,39 @@ result_t manager_list_removable(manager_t *manager) {
 	                                 (query_callback_t) _list_removable_package,
 	                                 manager);
 }
+
+static int _print_path(void *arg, int count, char **values, char **names) {
+	assert(FILE_FIELDS_COUNT == count);
+	assert(NULL != values);
+	assert(NULL != values[FILE_FIELD_PATH]);
+
+	if (0 > printf("%s\n", values[FILE_FIELD_PATH])) {
+		return 1;
+	}
+	return 0;
+}
+
+result_t manager_list_files(manager_t *manager, const char *name) {
+	/* the return value */
+	result_t result = RESULT_CORRUPT_DATA;
+
+	assert(NULL != manager);
+	assert(NULL != name);
+
+	log_write(LOG_DEBUG, "Listing files installed by %s\n", name);
+
+	/* make sure the package is installed */
+	result = manager_is_installed(manager, name);
+	if (RESULT_YES != result) {
+		goto end;
+	}
+
+	/* print the paths of all files installed by the package */
+	result = database_for_each_file(&manager->inst_packages,
+	                                name,
+	                                _print_path,
+	                                NULL);
+
+end:
+	return result;
+}

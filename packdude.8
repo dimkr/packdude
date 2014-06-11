@@ -4,7 +4,7 @@
 \- a package manager
 .SH SYNOPSIS
 .B packdude
-[-d] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-i|-r PACKAGE
+[-d] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-f|-i|-r PACKAGE
 .SH DESCRIPTION
 Installs or removes a package.
 .TP
@@ -28,6 +28,9 @@ Use a given package repository, instead of the default.
 .TP
 .B -l
 List available packages.
+.TP
+.B -f
+List the files installed by a package.
 .TP
 .B -d
 Show extensive debugging information.

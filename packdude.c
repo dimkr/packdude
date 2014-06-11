@@ -17,11 +17,12 @@ enum actions {
 	ACTION_LIST_INSTALLED = 2,
 	ACTION_LIST_AVAILABLE = 3,
 	ACTION_LIST_REMOVABLE = 4,
-	ACTION_INVALID        = 5
+	ACTION_LIST_FILES     = 5,
+	ACTION_INVALID        = 6
 };
 
 __attribute__((noreturn)) static void _show_help() {
-	log_dump("Usage: packdude [-d] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-i|-r PACKAGE\n");
+	log_dump("Usage: packdude [-d] [-n] [-p PREFIX] [-u URL] -l|-q|-c|-f|-i|-r PACKAGE\n");
 	exit(EXIT_FAILURE);
 }
 
@@ -58,7 +59,7 @@ int main(int argc, char *argv[]) {
 
 	/* parse the command-line */
 	do {
-		option = getopt(argc, argv, "dnlqcu:i:r:p:");
+		option = getopt(argc, argv, "dnlqcf:u:i:r:p:");
 		switch (option) {
 			case 'd':
 				debug = true;
@@ -97,6 +98,12 @@ int main(int argc, char *argv[]) {
 				verbosity_level = LOG_NOTHING;
 				break;
 
+			case 'f':
+				action = ACTION_LIST_FILES;
+				verbosity_level = LOG_NOTHING;
+				package = optarg;
+				break;
+
 			case 'u':
 				url = optarg;
 				break;
@@ -104,6 +111,7 @@ int main(int argc, char *argv[]) {
 			case (-1):
 				switch (action) {
 					case ACTION_REMOVE:
+					case ACTION_LIST_FILES:
 						if (NULL == package) {
 							_show_help();
 						}
@@ -181,6 +189,12 @@ done:
 
 		case ACTION_LIST_REMOVABLE:
 			if (RESULT_OK != manager_list_removable(&manager)) {
+				goto close_package_manager;
+			}
+			break;
+
+		case ACTION_LIST_FILES:
+			if (RESULT_OK != manager_list_files(&manager, package)) {
 				goto close_package_manager;
 			}
 			break;
