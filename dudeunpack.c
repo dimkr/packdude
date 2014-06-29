@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 	                MAP_PRIVATE,
 	                fd,
 	                0);
-	if (NULL == contents) {
+	if (MAP_FAILED == contents) {
 		goto close_file;
 	}
 
