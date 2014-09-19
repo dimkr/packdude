@@ -83,6 +83,9 @@ result_t manager_new(manager_t *manager, const char *prefix, const char *repo) {
 	/* initialize the installation stack */
 	manager->inst_stack = NULL;
 
+	/* save the installation prefix */
+	manager->prefix = prefix;
+
 	/* report success */
 	result = RESULT_OK;
 	goto end;
@@ -288,11 +291,13 @@ result_t manager_fetch(manager_t *manager,
 	/* make sure the package is compatible with the architecture the package
 	 * manager runs on */
 	assert(NULL != info.p_arch);
-	if ((0 != strcmp(ARCH, info.p_arch)) &&
-	    (0 != strcmp(ARCHITECTURE_INDEPENDENT, info.p_arch))) {
-		log_write(LOG_ERROR, "The package is incompatible with %s\n", ARCH);
-		result = RESULT_INCOMPATIBLE;
-		goto pop_from_stack;
+	if (0 == strcmp(DEFAULT_PREFIX, manager->prefix)) {
+		if ((0 != strcmp(ARCH, info.p_arch)) &&
+		    (0 != strcmp(ARCHITECTURE_INDEPENDENT, info.p_arch))) {
+			log_write(LOG_ERROR, "The package is incompatible with %s\n", ARCH);
+			result = RESULT_INCOMPATIBLE;
+			goto pop_from_stack;
+		}
 	}
 
 	/* fetch the package */

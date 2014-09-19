@@ -60,6 +60,7 @@ typedef struct {
 	database_t avail_packages; /*!< The package metadata database */
 	database_t inst_packages; /*!< The installation data database */
 	node_t *inst_stack; /*!< The installation stack */
+	const char *prefix; /*!< The package installation prefix */
 } manager_t;
 
 /*!
