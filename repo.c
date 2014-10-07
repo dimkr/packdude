@@ -79,7 +79,8 @@ result_t repo_get_database(repo_t *repo, database_t *database) {
 		}
 	} else {
 		/* if the database exists and not too old, do not fetch it again */
-		if (MAX_METADATA_CACHE_AGE > (time(NULL) - attributes.st_mtim.tv_sec)) {
+		if (MAX_METADATA_CACHE_AGE >
+		    (time(NULL) - (time_t) attributes.st_mtime)) {
 			log_write(LOG_DEBUG, "Using the package database cache\n");
 			goto open_database;
 		}
